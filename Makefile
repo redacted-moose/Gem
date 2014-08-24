@@ -42,4 +42,4 @@ ifeq ($(DEBUG),FALSE)
 endif
 
 clean:
-	rm -f *.o *.elf $(DISTDIR)/*.gdb $(DISTDIR)/$(EXE)
+	rm -f $(OBJS) *.elf $(DISTDIR)/*.gdb $(DISTDIR)/$(EXE)
