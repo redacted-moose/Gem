@@ -21,3 +21,12 @@
 *.i*86
 *.x86_64
 *.hex
+
+# Misc files
+*.tns
+*.tns.gdb
+.cproject
+.project
+
+# Bin directory
+bin/
