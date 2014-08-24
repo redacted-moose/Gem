@@ -1,0 +1,45 @@
+DEBUG = TRUE
+GCC = nspire-gcc
+AS = nspire-as
+GXX=nspire-g++
+LD = nspire-ld-bflt
+GCCFLAGS = -Wall -W -marm --std=c99
+LDFLAGS =
+ifeq ($(DEBUG),FALSE)
+	GCCFLAGS += -Os
+else
+	GCCFLAGS += -O0 -g -D DEBUG
+	LDFLAGS += --debug
+endif
+CSOURCES = $(wildcard *.c) $(wildcard */*.c)
+ASMSOURCES = $(wildcard *.S) $(wildcard */*.S)
+CPPOBJS = $(patsubst %.cpp,%.o,$(wildcard *.cpp)) $(patsubst %.cpp,%.o,$(wildcard */*.cpp))
+OBJS = $(patsubst %.c,%.o,$(CSOURCES)) $(patsubst %.S,%.o,$(ASMSOURCES)) $(CPPOBJS)
+
+ifneq ($(strip $(CPPOBJS)),)
+	LDFLAGS += --cpp
+endif
+EXE = gem.tns
+DISTDIR = bin
+vpath %.tns $(DISTDIR) 
+
+all: $(EXE)
+
+%.o: %.c
+	$(GCC) $(GCCFLAGS) -c $< -o $@
+
+%.o: %.cpp
+	$(GXX) $(GCCFLAGS) -c $< -o $@
+	
+%.o: %.S
+	$(AS) -c $< -o $@
+
+$(EXE): $(OBJS)
+	mkdir -p $(DISTDIR)
+	$(LD) $^ -o $(DISTDIR)/$@ $(LDFLAGS)
+ifeq ($(DEBUG),FALSE)
+	@rm -f $(DISTDIR)/*.gdb
+endif
+
+clean:
+	rm -f *.o *.elf $(DISTDIR)/*.gdb $(DISTDIR)/$(EXE)
