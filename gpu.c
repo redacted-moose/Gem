@@ -22,7 +22,7 @@ void reset_gpu()
 	gpu.curline = 0;
 }
 
-byte *screen[160 * 144 / 2];
+byte screen[160 * 144 / 2];
 
 int color_map[4] = {0xF, // WHITE
 		0xA, 0x5, 0x0 // BLACK
