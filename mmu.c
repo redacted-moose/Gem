@@ -184,17 +184,17 @@ byte read_byte(word address)
 		// Graphics VRAM
 	case 0x8000:
 	case 0x9000:
-		return gpu.vram[address];
+		return gpu.vram[address & 0x1FFF];
 
 		// External RAM (ERAM)
 	case 0xA000:
 	case 0xB000:
-		return mmu.eram[address];
+		return mmu.eram[address]; // FIXME: need to wrap address into addressable range for eram
 
 		// Working RAM (WRAM)
 	case 0xC000:
 	case 0xD000:
-		return mmu.wram[address];
+		return mmu.wram[address & 0x1FFF];
 
 		// Working RAM (Shadow)
 	case 0xE000:

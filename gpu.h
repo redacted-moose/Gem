@@ -10,34 +10,36 @@
 
 #include "gem.h"
 
-typedef enum gpu_mode {HBLANK, VBLANK, OAM_READ, VRAM_READ} gpu_mode;
+typedef enum gpu_mode {
+	HBLANK, VBLANK, OAM_READ, VRAM_READ
+} gpu_mode;
 
 typedef struct row_t {
 	union {
 		byte a;
 		struct {
-			byte a7 : 1;
-			byte a6 : 1;
-			byte a5 : 1;
-			byte a4 : 1;
-			byte a3 : 1;
-			byte a2 : 1;
-			byte a1 : 1;
-			byte a0 : 1;
+			byte a0 :1;
+			byte a1 :1;
+			byte a2 :1;
+			byte a3 :1;
+			byte a4 :1;
+			byte a5 :1;
+			byte a6 :1;
+			byte a7 :1;
 		};
 	};
 
 	union {
 		byte b;
 		struct {
-			byte b7 : 1;
-			byte b6 : 1;
-			byte b5 : 1;
-			byte b4 : 1;
-			byte b3 : 1;
-			byte b2 : 1;
-			byte b1 : 1;
-			byte b0 : 1;
+			byte b0 :1;
+			byte b1 :1;
+			byte b2 :1;
+			byte b3 :1;
+			byte b4 :1;
+			byte b5 :1;
+			byte b6 :1;
+			byte b7 :1;
 		};
 	};
 } row;
@@ -47,16 +49,16 @@ typedef struct tile_t { // Make this a row or half row? sizeof(tile) = 16 bytes
 } tile;
 
 typedef struct sprite_t {
-	byte y;
-	byte x;
-	byte tile_num;
 	struct {
-		byte priority	: 1;
-		byte y_flip	: 1;
-		byte x_flip	: 1;
-		byte palette	: 1;
-		byte		: 4;
+		byte :4;
+		byte palette :1;
+		byte x_flip :1;
+		byte y_flip :1;
+		byte priority :1;
 	};
+	byte tile_num;
+	byte x;
+	byte y;
 } sprite;
 
 typedef struct gpu_t {
@@ -64,9 +66,11 @@ typedef struct gpu_t {
 		byte vram[0x2000]; // 8 KB of VRAM - restructure as array of tiles + 2 1KB tilemaps
 		// union of vram byte array and tileset/maps?
 		struct {
-			tile tileset[384];
-			byte map0[1024];
+			// High address
 			byte map1[1024];
+			byte map0[1024];
+			tile tileset[384];
+		// Low address
 		};
 	};
 	union {
@@ -80,16 +84,16 @@ typedef struct gpu_t {
 
 	union {
 		struct {
-			// Bit 7
-			byte display_on	: 1;
-			byte win_tilemap: 1;
-			byte win_on	: 1;
-			byte bg_tileset	: 1;
-			byte bg_tilemap	: 1;
-			byte spr_size	: 1;
-			byte spr_on	: 1;
-			byte bg_on	: 1;
 			// Bit 0
+			byte bg_on :1;
+			byte spr_on :1;
+			byte spr_size :1;
+			byte bg_tilemap :1;
+			byte bg_tileset :1;
+			byte win_on :1;
+			byte win_tilemap :1;
+			byte display_on :1;
+		// Bit 7
 		};
 
 		byte lcd_control;
@@ -99,10 +103,10 @@ typedef struct gpu_t {
 	byte curline;
 	union {
 		struct {
-			byte color3	: 2;
-			byte color2	: 2;
-			byte color1	: 2;
-			byte color0	: 2;
+			byte color0 :2;
+			byte color1 :2;
+			byte color2 :2;
+			byte color3 :2;
 		};
 		byte background_palette;
 	};

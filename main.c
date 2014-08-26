@@ -23,7 +23,7 @@ int main(int argc, char **argv)
 	INFO("Successfully loaded rom file\n");
 	while(!any_key_pressed()) {
 		byte instruction = read_byte(cpu.pc);
-		INFO("%04x: Instruction was: 0x%02x\n", instruction);
+		INFO("%04x: Instruction was: 0x%02x\n", cpu.pc, instruction);
 		cpu.pc++;
 		cpu.opcodes[instruction]();
 		step_gpu();
