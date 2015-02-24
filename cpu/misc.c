@@ -23,21 +23,21 @@ void STOP()
 
 void HALT()
 {
-	cpu.halt = TRUE;
+	cpu.halt = true;
 	cpu.t += 4;
 	cpu.last_t = 4;
 }
 
 void DI()
 {
-	cpu.ime = FALSE;
+	cpu.ime = false;
 	cpu.t += 4;
 	cpu.last_t = 4;
 }
 
 void EI()
 {
-	cpu.ime = TRUE;
+	cpu.ime = true;
 	cpu.t += 4;
 	cpu.last_t = 4;
 }

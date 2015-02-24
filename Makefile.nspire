@@ -1,15 +1,15 @@
 DEBUG = TRUE
-CC = gcc
-AS = as
-CXX= g++
-LD = ld
-CFLAGS = -Wall -W --std=c99 `sdl-config --cflags`
-LDFLAGS = -Wall -W --std=c99 `sdl-config --libs`
+GCC = nspire-gcc
+AS = nspire-as
+GXX=nspire-g++
+LD = nspire-ld-bflt
+GCCFLAGS = -Wall -W -marm --std=c99
+LDFLAGS =
 ifeq ($(DEBUG),FALSE)
-	CFLAGS += -Os
+	GCCFLAGS += -Os
 else
-	CFLAGS += -O0 -g -D DEBUG
-	# LDFLAGS += --debug
+	GCCFLAGS += -O0 -g -D DEBUG
+	LDFLAGS += --debug
 endif
 CSOURCES = $(wildcard *.c) $(wildcard */*.c)
 ASMSOURCES = $(wildcard *.S) $(wildcard */*.S)
@@ -19,30 +19,27 @@ OBJS = $(patsubst %.c,%.o,$(CSOURCES)) $(patsubst %.S,%.o,$(ASMSOURCES)) $(CPPOB
 ifneq ($(strip $(CPPOBJS)),)
 	LDFLAGS += --cpp
 endif
-EXE = gem
+EXE = gem.tns
 DISTDIR = bin
 vpath %.tns $(DISTDIR) 
 
 all: $(EXE)
 
 %.o: %.c
-	$(CC) -c $< -o $@ $(CFLAGS)
+	$(GCC) $(GCCFLAGS) -c $< -o $@
 
 %.o: %.cpp
-	$(CXX) -c $< -o $@ $(CFLAGS)
+	$(GXX) $(GCCFLAGS) -c $< -o $@
 	
 %.o: %.S
 	$(AS) -c $< -o $@
 
 $(EXE): $(OBJS)
 	mkdir -p $(DISTDIR)
-# 	$(LD) $^ -o $(DISTDIR)/$@ $(LDFLAGS)
-# ifeq ($(DEBUG),FALSE)
-# 	@rm -f $(DISTDIR)/*.gdb
-# endif
-	$(CC) $^ -o $(DISTDIR)/$@ $(LDFLAGS)
-
-.PHONY: clean
+	$(LD) $^ -o $(DISTDIR)/$@ $(LDFLAGS)
+ifeq ($(DEBUG),FALSE)
+	@rm -f $(DISTDIR)/*.gdb
+endif
 
 clean:
 	rm -f $(OBJS) *.elf $(DISTDIR)/*.gdb $(DISTDIR)/$(EXE)

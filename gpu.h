@@ -11,7 +11,7 @@
 #include "gem.h"
 
 typedef enum gpu_mode {
-	HBLANK, VBLANK, OAM_READ, VRAM_READ
+	HBLANK = 0, VBLANK = 1, OAM_READ = 2, VRAM_READ = 3
 } gpu_mode;
 
 typedef struct row_t {
@@ -62,23 +62,34 @@ typedef struct sprite_t {
 } sprite;
 
 typedef struct gpu_t {
-	union {
-		byte vram[0x2000]; // 8 KB of VRAM - restructure as array of tiles + 2 1KB tilemaps
-		// union of vram byte array and tileset/maps?
-		struct {
-			// High address
-			byte map1[1024];
-			byte map0[1024];
-			tile tileset[384];
-		// Low address
-		};
-	};
+	byte vram[0x2000]; // 8 KB of VRAM - restructure as array of tiles + 2 1KB tilemaps
+			// union of vram byte array and tileset/maps?
+//	union {
+//		byte vram[0x2000]; // 8 KB of VRAM - restructure as array of tiles + 2 1KB tilemaps
+//		// union of vram byte array and tileset/maps?
+//		struct {
+//			// High address
+//			tile tileset[384];
+//			byte map1[1024];
+//			byte map0[1024];
+//		// Low address
+//		};
+//	};
 	union {
 		byte oam[0xA0]; // 160 bytes of OAM
 		sprite sprites[40];
 	};
 
-	gpu_mode mode;
+//	gpu_mode mode;
+
+	union {
+		struct {
+			byte mode : 2;
+			byte : 6;
+		};
+
+		byte lcdc_status;
+	};
 
 	// GPU registers
 

@@ -9,6 +9,7 @@
 #define GEM_H_
 
 #include <stdint.h>
+#include <stdio.h>
 //#include "cpu.h"
 //#include "mmu.h"
 //#include "gpu.h"

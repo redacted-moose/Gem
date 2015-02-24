@@ -5,7 +5,7 @@
  *      Author: sadlercr
  */
 
-#include <os.h>
+//#include <os.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "gem.h"
@@ -42,7 +42,7 @@ MMU mmu = {.bios = {0x31, 0xFE, 0xFF, 0xAF, 0x21, 0xFF, 0x9F, 0x32, 0xCB, 0x7C,
 
 void reset_mmu()
 {
-	mmu.in_bios = TRUE;
+	mmu.in_bios = true;
 }
 
 void load_rom(const char *path)
@@ -160,18 +160,21 @@ byte read_byte(word address)
 	switch(address & 0xF000) {
 	// Bios or Bank 0
 	case 0x0000:
-		if(mmu.in_bios == TRUE) {
-			if(address < 0x0100)
+		if(mmu.in_bios == true) {
+			if(address < 0x0100) {
+//				INFO("MMU: Read BIOS at 0x%04x, got 0x%02x\n", address, mmu.bios[address]);
 				return mmu.bios[address];
-			else if(cpu.pc == 0x100)
-				mmu.in_bios = FALSE;
+			} else if(cpu.pc == 0x100)
+				mmu.in_bios = false;
 		}
+//		INFO("MMU: Read rom at 0x%04x, got 0x%02x\n", address, mmu.rom[address]);
 		return mmu.rom[address];
 
 		// Bank 0
 	case 0x1000:
 	case 0x2000:
 	case 0x3000:
+//		INFO("MMU: Read rom at 0x%04x, got 0x%02x\n", address, mmu.rom[address]);
 		return mmu.rom[address];
 
 		// Bank 1 (No bank switching yet)
@@ -179,25 +182,30 @@ byte read_byte(word address)
 	case 0x5000:
 	case 0x6000:
 	case 0x7000:
+//		INFO("MMU: Read rom at 0x%04x, got 0x%02x\n", address, mmu.rom[address]);
 		return mmu.rom[address];
 
 		// Graphics VRAM
 	case 0x8000:
 	case 0x9000:
+		INFO("MMU: Read GPU vram at 0x%04x, got 0x%02x\n", address, gpu.vram[address & 0x1FFF]);
 		return gpu.vram[address & 0x1FFF];
 
 		// External RAM (ERAM)
 	case 0xA000:
 	case 0xB000:
-		return mmu.eram[address]; // FIXME: need to wrap address into addressable range for eram
+//		INFO("MMU: Read external ram at 0x%04x, got 0x%02x\n", address, mmu.eram[address & 0x1FFF]);
+		return mmu.eram[address & 0x1FFF]; // DONE?: need to wrap address into addressable range for eram
 
 		// Working RAM (WRAM)
 	case 0xC000:
 	case 0xD000:
+//		INFO("MMU: Read work ram at 0x%04x, got 0x%02x\n", address, mmu.wram[address & 0x1FFF]);
 		return mmu.wram[address & 0x1FFF];
 
 		// Working RAM (Shadow)
 	case 0xE000:
+//		INFO("MMU: Read work ram shadow at 0x%04x, got 0x%02x\n", address, mmu.wram[address & 0x1FFF]);
 		return mmu.wram[address & 0x1FFF];
 
 	case 0xF000:
@@ -216,18 +224,23 @@ byte read_byte(word address)
 		case 0xB00:
 		case 0xC00:
 		case 0xD00:
+//			INFO("MMU: Read work ram shadow at 0x%04x, got 0x%02x\n", address, mmu.wram[address & 0x1FFF]);
 			return mmu.wram[address & 0x1FFF];
 
 		case 0xE00:
-			if(address < 0xFEA0)
+			if(address < 0xFEA0) {
+//				INFO("MMU: Read GPU oam memory at 0x%04x, got 0x%02x\n", address, gpu.oam[address & 0xFF]);
 				return gpu.oam[address & 0xFF];
-			else
+			} else {
 				return 0;
+			}
 
 		case 0xF00:
 			if(address >= 0xFF80) {
+//				INFO("MMU: Read zram at 0x%04x, got 0x%02x\n", address, mmu.zram[address & 0x7F]);
 				return mmu.zram[address & 0x7F];
 			} else {
+//				INFO("MMU: Read I/O at 0x%04x, got 0x%02x\n", address);
 				// I/O control -- unimplemented
 //				return 0;
 				switch(address & 0x00F0) {
@@ -251,12 +264,15 @@ void write_byte(word address, byte val)
 	switch(address & 0xF000) {
 	case 0x8000:
 	case 0x9000:
+		INFO("MMU: Wrote 0x%02x to 0x%04x (GPU vram)\n", val, address);
 		gpu.vram[address & 0x1FFF] = val;
+		rendertile_gpu(address);
 		break;
 	case 0xF000:
 		switch(address & 0x0F00) {
 		case 0xF00:
 			if (address >= 0xFF80) {
+//				INFO("MMU: Wrote 0x%02x to 0x%04x (zram)\n", val, address);
 				mmu.zram[address & 0x7F] = val;
 			} else {
 				switch (address & 0x00F0) {

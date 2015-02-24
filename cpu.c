@@ -8,16 +8,16 @@
 #include "cpu.h"
 #include "cpu/opcode_table.h"
 
-CPU cpu = {
-	.opcodes = opcode_table
-};
+CPU cpu = { .opcodes = opcode_table };
 
-void reset_cpu()
-{
+void reset_cpu() {
 
 }
 
-void execute()
-{
-
+void execute() {
+	byte instruction = read_byte(cpu.pc);
+//	INFO("CPU: PC = %04x; Instruction was: 0x%02x\n", cpu.pc, instruction);
+	cpu.pc++;
+	cpu.opcodes[instruction]();
+	step_gpu();
 }

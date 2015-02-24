@@ -8,13 +8,18 @@
 #ifndef MMU_H_
 #define MMU_H_
 
-#include <os.h>
+//#include <os.h>
+#include <stdbool.h>
 #include "gem.h"
 
 typedef struct mmu_t {
 
 	// Is bios mapped?
-	BOOL in_bios;
+//	bool in_bios;
+
+	struct {
+		byte in_bios;
+	};
 
 	// Memory regions
 	byte bios[0x100]; // 256 byte Bios

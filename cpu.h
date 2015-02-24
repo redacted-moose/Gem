@@ -8,7 +8,8 @@
 #ifndef CPU_H_
 #define CPU_H_
 
-#include <os.h>
+// #include <os.h>
+#include <stdbool.h>
 #include "gem.h"
 
 typedef void (*opcode)(); // Function pointer declaring opcode functions
@@ -155,10 +156,10 @@ typedef struct cpu_t {
 	unsigned int last_t;
 
 	// Halt mode
-	BOOL halt;
+	bool halt;
 
 	// Interrupt master enable: enables/disables interrupts
-	BOOL ime;
+	bool ime;
 
 	// Array to store instruction function pointers
 	opcode *opcodes;

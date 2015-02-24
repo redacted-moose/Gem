@@ -276,7 +276,7 @@ void RETI()
 {
 	cpu.pc = read_word(cpu.sp);
 	cpu.sp += 2;
-	cpu.ime = TRUE;
+	cpu.ime = true;
 	cpu.t += 16;
 	cpu.last_t = 16;
 }

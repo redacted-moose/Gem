@@ -893,7 +893,7 @@ void CP_B()
 	cpu.hc = ((cpu.a & 0x0F) < (after & 0x0F)) ? 1 : 0; // Set if no half-borrow
 	cpu.ca = (cpu.a < after) ? 1 : 0; // Set if no borrow
 	cpu.n = 1;
-	cpu.z = (cpu.a) ? 0 : 1;
+	cpu.z = (after) ? 0 : 1;
 	cpu.t += 4;
 	cpu.last_t = 4;
 }
@@ -904,7 +904,7 @@ void CP_C()
 	cpu.hc = ((cpu.a & 0x0F) < (after & 0x0F)) ? 1 : 0; // Set if no half-borrow
 	cpu.ca = (cpu.a < after) ? 1 : 0; // Set if no borrow
 	cpu.n = 1;
-	cpu.z = (cpu.a) ? 0 : 1;
+	cpu.z = (after) ? 0 : 1;
 	cpu.t += 4;
 	cpu.last_t = 4;
 }
@@ -915,7 +915,7 @@ void CP_D()
 	cpu.hc = ((cpu.a & 0x0F) < (after & 0x0F)) ? 1 : 0; // Set if no half-borrow
 	cpu.ca = (cpu.a < after) ? 1 : 0; // Set if no borrow
 	cpu.n = 1;
-	cpu.z = (cpu.a) ? 0 : 1;
+	cpu.z = (after) ? 0 : 1;
 	cpu.t += 4;
 	cpu.last_t = 4;
 }
@@ -926,7 +926,7 @@ void CP_E()
 	cpu.hc = ((cpu.a & 0x0F) < (after & 0x0F)) ? 1 : 0; // Set if no half-borrow
 	cpu.ca = (cpu.a < after) ? 1 : 0; // Set if no borrow
 	cpu.n = 1;
-	cpu.z = (cpu.a) ? 0 : 1;
+	cpu.z = (after) ? 0 : 1;
 	cpu.t += 4;
 	cpu.last_t = 4;
 }
@@ -937,7 +937,7 @@ void CP_H()
 	cpu.hc = ((cpu.a & 0x0F) < (after & 0x0F)) ? 1 : 0; // Set if no half-borrow
 	cpu.ca = (cpu.a < after) ? 1 : 0; // Set if no borrow
 	cpu.n = 1;
-	cpu.z = (cpu.a) ? 0 : 1;
+	cpu.z = (after) ? 0 : 1;
 	cpu.t += 4;
 	cpu.last_t = 4;
 }
@@ -948,7 +948,7 @@ void CP_L()
 	cpu.hc = ((cpu.a & 0x0F) < (after & 0x0F)) ? 1 : 0; // Set if no half-borrow
 	cpu.ca = (cpu.a < after) ? 1 : 0; // Set if no borrow
 	cpu.n = 1;
-	cpu.z = (cpu.a) ? 0 : 1;
+	cpu.z = (after) ? 0 : 1;
 	cpu.t += 4;
 	cpu.last_t = 4;
 }
@@ -959,7 +959,7 @@ void CP_IHL()
 	cpu.hc = ((cpu.a & 0x0F) < (after & 0x0F)) ? 1 : 0; // Set if no half-borrow
 	cpu.ca = (cpu.a < after) ? 1 : 0; // Set if no borrow
 	cpu.n = 1;
-	cpu.z = (cpu.a) ? 0 : 1;
+	cpu.z = (after) ? 0 : 1;
 	cpu.t += 8;
 	cpu.last_t = 8;
 }
@@ -970,7 +970,7 @@ void CP_A()
 	cpu.hc = ((cpu.a & 0x0F) < (after & 0x0F)) ? 1 : 0; // Set if no half-borrow
 	cpu.ca = (cpu.a < after) ? 1 : 0; // Set if no borrow
 	cpu.n = 1;
-	cpu.z = (cpu.a) ? 0 : 1;
+	cpu.z = (after) ? 0 : 1;
 	cpu.t += 4;
 	cpu.last_t = 4;
 }
@@ -1074,7 +1074,7 @@ void CP_d8()
 	cpu.hc = ((cpu.a & 0x0F) < (after & 0x0F)) ? 1 : 0; // Set if no half-borrow
 	cpu.ca = (cpu.a < after) ? 1 : 0; // Set if no borrow
 	cpu.n = 1;
-	cpu.z = (cpu.a) ? 0 : 1;
+	cpu.z = (after) ? 0 : 1;
 	cpu.t += 8;
 	cpu.last_t = 8;
 }
