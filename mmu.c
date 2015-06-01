@@ -188,7 +188,7 @@ byte read_byte(word address)
 		// Graphics VRAM
 	case 0x8000:
 	case 0x9000:
-		INFO("MMU: Read GPU vram at 0x%04x, got 0x%02x\n", address, gpu.vram[address & 0x1FFF]);
+		// INFO("MMU: Read GPU vram at 0x%04x, got 0x%02x\n", address, gpu.vram[address & 0x1FFF]);
 		return gpu.vram[address & 0x1FFF];
 
 		// External RAM (ERAM)
@@ -264,9 +264,9 @@ void write_byte(word address, byte val)
 	switch(address & 0xF000) {
 	case 0x8000:
 	case 0x9000:
-		INFO("MMU: Wrote 0x%02x to 0x%04x (GPU vram)\n", val, address);
+		// INFO("MMU: Wrote 0x%02x to 0x%04x (GPU vram)\n", val, address);
 		gpu.vram[address & 0x1FFF] = val;
-		rendertile_gpu(address);
+		// rendertile_gpu(address);
 		break;
 	case 0xF000:
 		switch(address & 0x0F00) {

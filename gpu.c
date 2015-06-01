@@ -33,7 +33,7 @@ void reset_gpu() {
 
 	atexit(SDL_Quit);
 
-	screen = SDL_SetVideoMode(289, 144, 8, SDL_SWSURFACE);
+	screen = SDL_SetVideoMode(160, 144, 8, SDL_SWSURFACE);
 	if (screen == NULL) {
 		fprintf(stderr, "Couldn't set 160x144x8 video mode: %s\n",
 				SDL_GetError());
@@ -93,6 +93,9 @@ void setPixel(int x, int y, Uint32 color) {
 	}
 }
 
+/**
+ * GPU State machine
+ */
 void step_gpu() {
 	switch (gpu.mode) {
 	case OAM_READ:
@@ -144,63 +147,80 @@ void step_gpu() {
 	}
 }
 
+/**
+ * Renders a scanline
+ */
 void renderscan_gpu() {
 //	INFO("GPU: Rendering scanline %d\n", gpu.curline);
-//	byte *map = (gpu.bg_tilemap) ? gpu.map0 : gpu.map1;
-	byte mapoffs = (gpu.bg_tilemap) ? 0x1C00 : 0x1800;
+
+	// Which background tilemap will be used
+	word mapoffs = gpu.bg_tilemap ? VRAM_BACKGROUND_TILE_MAP_1 : VRAM_BACKGROUND_TILE_MAP_0;
+
+	// Which line to start at 
 	mapoffs += (gpu.curline + gpu.scroll_y) / 8;
+	
+	// Which tile to start at in the map line 
 	byte lineoffs = gpu.scroll_x / 8;
+	
+	// Which line in the tile to use
 	byte y = (gpu.curline + gpu.scroll_y) % 8;
+	
+	// Where to start in the tile line
 	byte x = gpu.scroll_x % 8;
+
 //	byte screenoffs = gpu.curline * 160;
-	byte tileoffset = read_byte(0x8000 + mapoffs + lineoffs);
-//	tile curTile;
-	word curTile[8];
+	byte tileoffset = read_byte(mapoffs + lineoffs);
+
+	// Current tile	
+	tile curTile;
+	// word curTile[8];
 
 	if (gpu.bg_tileset) { // Use signed tiles
-//		curTile = gpu.tileset[0x100 + (s_byte) tileoffset];
+		curTile = gpu.tileset[0x100 + (s_byte) tileoffset];
 		// FIXME: Need to find a way to convert memory location to tile - maybe a wrapper routine
 //		curTile = (tile)(gpu.vram[0x100 + (s_byte) tileoffset]);
-		memcpy(&curTile, gpu.vram + 0x100 + (s_byte) tileoffset, sizeof(curTile));
+		// memcpy(&curTile, gpu.vram + 0x100 + (s_byte) tileoffset, sizeof(curTile));
 	} else { // Use unsigned tiles
-//		curTile = gpu.tileset[tileoffset];
+		curTile = gpu.tileset[tileoffset];
 //		curTile = (tile)(gpu.vram[tileoffset]);
-		memcpy(&curTile, gpu.vram + tileoffset, sizeof(curTile));
+		// memcpy(&curTile, gpu.vram + tileoffset, sizeof(curTile));
 	}
 
-	for(int i = 0; i < 160; i++) {
-		word curRow = curTile[y];
-		byte color_index = (byte)(((curRow >> (8 + x)) & 0x1) << 1) | (byte)((curRow >> x) & 0x1);
-		byte color = (gpu.background_palette >> (2 * color_index)) & 0x03;
+	for(int i = 0; i < 20; i++) { // For each tile in the current scanline
 
-		if (SDL_MUSTLOCK(screen)) {
-			if (SDL_LockSurface(screen) < 0) {
-				fprintf(stderr, "Can't lock screen: %s\n", SDL_GetError());
-				return;
+		row curRow = curTile.rows[y];
+
+		for (x; x < 8; x++) {
+
+			byte color_index = (byte)(((curRow.b >> x) & 0x1) << 1) | (byte)((curRow.a >> x) & 0x1);
+			byte color = (gpu.background_palette >> (2 * color_index)) & 0x03;
+
+			if (SDL_MUSTLOCK(screen)) {
+				if (SDL_LockSurface(screen) < 0) {
+					fprintf(stderr, "Can't lock screen: %s\n", SDL_GetError());
+					return;
+				}
+			}
+
+			setPixel(8*i + x, gpu.curline, color_map[color]);
+
+			if (SDL_MUSTLOCK(screen)) {
+				SDL_UnlockSurface(screen);
 			}
 		}
 
-		setPixel(i, gpu.curline, color_map[color]);
-
-		if (SDL_MUSTLOCK(screen)) {
-			SDL_UnlockSurface(screen);
-		}
-
-		x++;
-		if (x == 8) {
-			x = 0;
-			lineoffs = (lineoffs + 1) % 32;
-//			tileoffset = map[mapoffs + lineoffs];
-			tileoffset = read_byte(0x8000 + mapoffs + lineoffs);
-			if (gpu.bg_tileset) { // Use signed tiles
-//				curTile = gpu.tileset[0x100 + (s_byte) tileoffset];
-//				curTile = (tile)(gpu.vram* + 0x100 + (s_byte) tileoffset);
-				memcpy(&curTile, gpu.vram + 0x100 + (s_byte) tileoffset, sizeof(curTile));
-			} else { // Use unsigned tiles
-//				curTile = gpu.tileset[tileoffset];
-//				curTile = (tile)(gpu.vram + tileoffset);
-				memcpy(&curTile, gpu.vram + tileoffset, sizeof(curTile));
-			}
+		x = 0;
+		lineoffs = (lineoffs + 1) % 32;
+//		tileoffset = map[mapoffs + lineoffs];
+		tileoffset = read_byte(mapoffs + lineoffs);
+		if (gpu.bg_tileset) { // Use signed tiles
+			curTile = gpu.tileset[0x100 + (s_byte) tileoffset];
+//			curTile = (tile)(gpu.vram* + 0x100 + (s_byte) tileoffset);
+			// memcpy(&curTile, gpu.vram + 0x100 + (s_byte) tileoffset, sizeof(curTile));
+		} else { // Use unsigned tiles
+			curTile = gpu.tileset[tileoffset];
+//			curTile = (tile)(gpu.vram + tileoffset);
+			// memcpy(&curTile, gpu.vram + tileoffset, sizeof(curTile));
 		}
 	}
 //	for (int i = 0; i < 160; i++) {
@@ -268,6 +288,13 @@ void renderscan_gpu() {
 
 }
 
+//void render_scanline(int line, ) {
+
+//}
+
+/**
+ * Blits the internal screen to SDL
+ */
 void renderscreen_gpu() {
 	// for(int i = 0; i < 144; i++) {
 	// 	memcpy((void *)(SCREEN_BASE_ADDRESS + (i * SCREEN_WIDTH / 2)),
@@ -282,18 +309,18 @@ void renderscreen_gpu() {
 byte read_byte_gpu(word address) {
 //	INFO("GPU: Reading word from 0x%04x...\n", address);
 	switch (address) {
-	case 0xFF40:
+	case GPU_LCD_CONTROL:
 //		INFO("GPU: Read lcd_control: 0x%02x\n", gpu.lcd_control);
 		return gpu.lcd_control;
-	case 0xFF41:
+	case GPU_LCDC_STATUS:
 		return gpu.lcdc_status;
-	case 0xFF42:
+	case GPU_SCROLL_Y:
 //		INFO("GPU: Read scroll_y: 0x%02x\n", gpu.scroll_y);
 		return gpu.scroll_y;
-	case 0xFF43:
+	case GPU_SCROLL_X:
 //		INFO("GPU: Read scroll_x: 0x%02x\n", gpu.scroll_x);
 		return gpu.scroll_x;
-	case 0xFF44:
+	case GPU_CURLINE:
 //		INFO("GPU: Read curline: 0x%02x\n", gpu.curline);
 		return gpu.curline;
 	case 0xFF50:
@@ -309,19 +336,19 @@ byte read_byte_gpu(word address) {
 
 void write_byte_gpu(word address, byte val) {
 	switch (address) {
-	case 0xFF40:
+	case GPU_LCD_CONTROL:
 		gpu.lcd_control = val;
 		break;
-	case 0xFF41:
+	case GPU_LCDC_STATUS:
 		gpu.lcdc_status = val;
 		break;
-	case 0xFF42:
+	case GPU_SCROLL_Y:
 		gpu.scroll_y = val;
 		break;
-	case 0xFF43:
+	case GPU_SCROLL_X:
 		gpu.scroll_x = val;
 		break;
-	case 0xFF47:
+	case GPU_BACKGROUND_PALETTE:
 		gpu.background_palette = val;
 		break;
 	case 0xFF50:
@@ -360,5 +387,5 @@ void rendertile_gpu(word address) {
 		}
 	}
 
-	SDL_UpdateRect(screen, 161, 0, 289, 144);
+	SDL_UpdateRect(screen, 161, 0, 289 - 161, 144);
 }

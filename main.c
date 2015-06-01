@@ -40,9 +40,9 @@ int main(int argc, char **argv)
 	reset();
 //	load_rom(getcwd(NULL, 0));
 
-	INFO("Writing 0xdead to 0x8000\n");
-	write_word(0x8000, 0xdead);
-	INFO("Got 0x%x from 0x8000\n", read_word(0x8000));
+//	INFO("Writing 0xdead to 0x8000\n");
+//	write_word(0x8000, 0xdead);
+//	INFO("Got 0x%x from 0x8000\n", read_word(0x8000));
 
 	if (argc == 2) {
 		load_rom(argv[1]);
