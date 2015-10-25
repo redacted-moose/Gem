@@ -3,6 +3,8 @@ CC = gcc
 AS = as
 CXX= g++
 LD = ld
+# CFLAGS = -Wall -W -fPIC --std=c99 `sdl-config --cflags`
+# LDFLAGS = -Wall -W -shared --std=c99 `sdl-config --libs`
 CFLAGS = -Wall -W --std=c99 `sdl-config --cflags`
 LDFLAGS = -Wall -W --std=c99 `sdl-config --libs`
 ifeq ($(DEBUG),FALSE)
@@ -19,7 +21,9 @@ OBJS = $(patsubst %.c,%.o,$(CSOURCES)) $(patsubst %.S,%.o,$(ASMSOURCES)) $(CPPOB
 ifneq ($(strip $(CPPOBJS)),)
 	LDFLAGS += --cpp
 endif
-EXE = gem
+# EXE = gem.so
+# DISTDIR = lib
+EXE = gem.bin
 DISTDIR = bin
 vpath %.tns $(DISTDIR) 
 

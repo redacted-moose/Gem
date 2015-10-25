@@ -15,52 +15,68 @@
 #include "cpu.h"
 #include "mmu.h"
 
-GPU gpu;
+GPUSTATE gpu;
 
 SDL_Surface *screen;
 
 void renderscan_gpu();
 void renderscreen_gpu();
 
+// FIXME: Palette is wrong color and is not grayscale
 void reset_gpu() {
 	gpu.mode = 0;
 	gpu.curline = 0;
+	SDL_Color colors[256];
 
 	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
 		fprintf(stderr, "Couldn't initialize SDL: %s\n", SDL_GetError());
 		exit(1);
 	}
 
+	// Make a grayscale color palette
+	for(int i = 0; i < 256; i++){
+		colors[i].r = i;
+		colors[i].g = i;
+		colors[i].b = i;
+	}
+
 	atexit(SDL_Quit);
 
-	screen = SDL_SetVideoMode(160, 144, 8, SDL_SWSURFACE);
+	screen = SDL_SetVideoMode(GPU_SCREEN_WIDTH, GPU_SCREEN_HEIGHT, 8, SDL_SWSURFACE);
 	if (screen == NULL) {
-		fprintf(stderr, "Couldn't set 160x144x8 video mode: %s\n",
-				SDL_GetError());
+		fprintf(stderr, "Couldn't set %dx%dx8 video mode: %s\n",
+				GPU_SCREEN_WIDTH, GPU_SCREEN_HEIGHT, SDL_GetError());
 		exit(1);
 	}
+
+	// Set a grayscale color palette
+	SDL_SetColors(screen, colors, 0, 256);
 
 	SDL_WM_SetCaption("Gem - a Gameboy Emulator", NULL);
 }
 
-//byte screen[160 * 144 / 2];
-
-//int color_map[4] = { 0xF, // WHITE
-//		0xA, 0x5, 0x0 // BLACK
-//		};
+GPUSTATE get_gpu() {
+	return gpu;
+}
 
 Uint32 color_map[4] = {
-		0xFFFFFFFF,
-		0xAAAAAAAA,
-		0x55555555,
-		0x00000000
+		0x000000FF, // White
+		0x000000AA, // Light Gray
+		0x00000055, // Dark Grey
+		0x00000000  // Black
 };
 
 // This is sketchy...
-void setPixel(int x, int y, Uint32 color) {
+void set_pixel(int x, int y, Uint32 color) {
 //	unsigned char* p = (unsigned char*)(screen
 //			+ ((x >> 1) + (y << 7) + (y << 5)));
 //	*p = (x & 1) ? ((*p & 0xF0) | color) : ((*p & 0x0F) | (color << 4));
+    if (SDL_MUSTLOCK(screen)) {
+        if (SDL_LockSurface(screen) < 0) {
+            fprintf(stderr, "Can't lock screen: %s\n", SDL_GetError());
+            return;
+        }
+    }
 
 	int bpp = screen->format->BytesPerPixel;
 	/* Here p is the address to the pixel we want to set */
@@ -91,6 +107,53 @@ void setPixel(int x, int y, Uint32 color) {
 		*(Uint32 *) p = color;
 		break;
 	}
+
+    if (SDL_MUSTLOCK(screen)) {
+        SDL_UnlockSurface(screen);
+    }
+
+}
+
+/**
+ * Return the pixel value at (x, y)
+ * NOTE: The surface must be locked before calling this!
+ */
+Uint32 get_pixel(int x, int y)
+{
+    if (SDL_MUSTLOCK(screen)) {
+        if (SDL_LockSurface(screen) < 0) {
+            fprintf(stderr, "Can't lock screen: %s\n", SDL_GetError());
+            return 0;
+        }
+    }
+
+    int bpp = screen->format->BytesPerPixel;
+    /* Here p is the address to the pixel we want to retrieve */
+    Uint8 *p = (Uint8 *)screen->pixels + y * screen->pitch + x * bpp;
+
+    switch(bpp) {
+    case 1:
+        return *p;
+
+    case 2:
+        return *(Uint16 *)p;
+
+    case 3:
+        if(SDL_BYTEORDER == SDL_BIG_ENDIAN)
+            return p[0] << 16 | p[1] << 8 | p[2];
+        else
+            return p[0] | p[1] << 8 | p[2] << 16;
+
+    case 4:
+        return *(Uint32 *)p;
+
+    default:
+        return 0;       /* shouldn't happen, but avoids warnings */
+    }
+
+    if (SDL_MUSTLOCK(screen)) {
+        SDL_UnlockSurface(screen);
+    }
 }
 
 /**
@@ -99,46 +162,41 @@ void setPixel(int x, int y, Uint32 color) {
 void step_gpu() {
 	switch (gpu.mode) {
 	case OAM_READ:
-		if (cpu.t >= 80) {
+		if (cpu.t >= OAM_READ_CYCLE_COUNT) {
 			cpu.t = 0;
-//			INFO("GPU: Entering VRAM_READ...\n");
 			gpu.mode = VRAM_READ;
 		}
 		break;
 
 	case VRAM_READ:
-		if (cpu.t >= 172) {
+		if (cpu.t >= VRAM_READ_CYCLE_COUNT) {
 			cpu.t = 0;
-//			INFO("GPU: Entering HBLANK...\n");
 			gpu.mode = HBLANK;
-
 			renderscan_gpu();
 		}
 		break;
 
 	case HBLANK:
-		if (cpu.t >= 204) {
+		if (cpu.t >= HBLANK_CYCLE_COUNT) {
 			cpu.t = 0;
 			gpu.curline++;
-			if (gpu.curline == 143) {
-//				INFO("Entering VBLANK...\n");
+			if (gpu.curline == 144) {
 				gpu.mode = VBLANK;
+                mmu.i_flag.vblank = 1;
 				// plot to screen
 				renderscreen_gpu();
 			} else {
-//				INFO("GPU: Entering OAM_READ...\n");
 				gpu.mode = OAM_READ;
 			}
 		}
 		break;
 
 	case VBLANK:
-		if (cpu.t >= 456) {
+		if (cpu.t >= VBLANK_CYCLE_COUNT) {
 			cpu.t = 0;
 			gpu.curline++;
 
 			if (gpu.curline > 153) {
-//				INFO("GPU: Entering OAM_READ...\n");
 				gpu.mode = OAM_READ;
 				gpu.curline = 0;
 			}
@@ -148,190 +206,135 @@ void step_gpu() {
 }
 
 /**
+ * Gets color of pixel x in row r using palette p
+ */
+byte get_color(row r, byte x, byte p) {
+	byte color_index = (byte)(((r.a >> (7 - x)) & 0x1) << 1) | (byte)((r.b >> (7 - x)) & 0x1);
+	return (p >> (2 * color_index)) & 0x03;
+}
+
+/**
  * Renders a scanline
  */
 void renderscan_gpu() {
-//	INFO("GPU: Rendering scanline %d\n", gpu.curline);
+	byte scanrow[GPU_SCREEN_WIDTH];
 
-	// Which background tilemap will be used
-	word mapoffs = gpu.bg_tilemap ? VRAM_BACKGROUND_TILE_MAP_1 : VRAM_BACKGROUND_TILE_MAP_0;
+	if (gpu.bg_on) {
+		// Which background tilemap will be used
+		word mapoffs = gpu.bg_tilemap ? VRAM_BACKGROUND_TILE_MAP_1 : VRAM_BACKGROUND_TILE_MAP_0;
 
-	// Which line to start at 
-	mapoffs += (gpu.curline + gpu.scroll_y) / 8;
-	
-	// Which tile to start at in the map line 
-	byte lineoffs = gpu.scroll_x / 8;
-	
-	// Which line in the tile to use
-	byte y = (gpu.curline + gpu.scroll_y) % 8;
-	
-	// Where to start in the tile line
-	byte x = gpu.scroll_x % 8;
+		// Which line to start at
+		// This is a bit tricky - the division by 8 has to happen first
+		mapoffs += 32*((gpu.curline + gpu.scroll_y) / 8);
 
-//	byte screenoffs = gpu.curline * 160;
-	byte tileoffset = read_byte(mapoffs + lineoffs);
+		// Which tile to start at in the map line
+		byte lineoffs = gpu.scroll_x / 8;
 
-	// Current tile	
-	tile curTile;
-	// word curTile[8];
+		// Which line in the tile to use
+		byte y = (gpu.curline + gpu.scroll_y) % 8;
 
-	if (gpu.bg_tileset) { // Use signed tiles
-		curTile = gpu.tileset[0x100 + (s_byte) tileoffset];
-		// FIXME: Need to find a way to convert memory location to tile - maybe a wrapper routine
-//		curTile = (tile)(gpu.vram[0x100 + (s_byte) tileoffset]);
-		// memcpy(&curTile, gpu.vram + 0x100 + (s_byte) tileoffset, sizeof(curTile));
-	} else { // Use unsigned tiles
-		curTile = gpu.tileset[tileoffset];
-//		curTile = (tile)(gpu.vram[tileoffset]);
-		// memcpy(&curTile, gpu.vram + tileoffset, sizeof(curTile));
-	}
+		// Where to start in the tile line
+		byte x = gpu.scroll_x % 8;
 
-	for(int i = 0; i < 20; i++) { // For each tile in the current scanline
+		for(int i = 0; i < 20; i++) {// For each tile in the current scanline
+			byte tileoffset = read_byte(mapoffs + lineoffs);
 
-		row curRow = curTile.rows[y];
+			tile cur_tile = gpu.tileset[(gpu.bg_tileset ? tileoffset : 0x100 + (s_byte)tileoffset)];
 
-		for (x; x < 8; x++) {
+			row cur_row = cur_tile.rows[y];
 
-			byte color_index = (byte)(((curRow.b >> x) & 0x1) << 1) | (byte)((curRow.a >> x) & 0x1);
-			byte color = (gpu.background_palette >> (2 * color_index)) & 0x03;
+			for(; x < 8; x++) {
+				byte color = get_color(cur_row, x, gpu.background.palette);
 
-			if (SDL_MUSTLOCK(screen)) {
-				if (SDL_LockSurface(screen) < 0) {
-					fprintf(stderr, "Can't lock screen: %s\n", SDL_GetError());
-					return;
-				}
+				/* set_pixel(8*i + x, gpu.curline, color_map[color]); */
+                scanrow[8*i + x] = color;
 			}
 
-			setPixel(8*i + x, gpu.curline, color_map[color]);
-
-			if (SDL_MUSTLOCK(screen)) {
-				SDL_UnlockSurface(screen);
-			}
-		}
-
-		x = 0;
-		lineoffs = (lineoffs + 1) % 32;
-//		tileoffset = map[mapoffs + lineoffs];
-		tileoffset = read_byte(mapoffs + lineoffs);
-		if (gpu.bg_tileset) { // Use signed tiles
-			curTile = gpu.tileset[0x100 + (s_byte) tileoffset];
-//			curTile = (tile)(gpu.vram* + 0x100 + (s_byte) tileoffset);
-			// memcpy(&curTile, gpu.vram + 0x100 + (s_byte) tileoffset, sizeof(curTile));
-		} else { // Use unsigned tiles
-			curTile = gpu.tileset[tileoffset];
-//			curTile = (tile)(gpu.vram + tileoffset);
-			// memcpy(&curTile, gpu.vram + tileoffset, sizeof(curTile));
+			x = 0;
+			lineoffs = (lineoffs + 1) % 32;
 		}
 	}
-//	for (int i = 0; i < 160; i++) {
-//		byte color;
-//		row curRow = curTile.rows[y];
-//		byte color_index;
-//		switch (x) {
-//		case 0:
-//			color_index = curRow.a0 | (curRow.b0 << 1);
-//			break;
-//		case 1:
-//			color_index = curRow.a1 | (curRow.b1 << 1);
-//			break;
-//		case 2:
-//			color_index = curRow.a2 | (curRow.b2 << 1);
-//			break;
-//		case 3:
-//			color_index = curRow.a3 | (curRow.b3 << 1);
-//			break;
-//		case 4:
-//			color_index = curRow.a4 | (curRow.b4 << 1);
-//			break;
-//		case 5:
-//			color_index = curRow.a5 | (curRow.b5 << 1);
-//			break;
-//		case 6:
-//			color_index = curRow.a6 | (curRow.b6 << 1);
-//			break;
-//		case 7:
-//			color_index = curRow.a7 | (curRow.b7 << 1);
-//			break;
-//		}
-//		color = (gpu.background_palette >> (2 * color_index)) & 0x03;
-//
-//		if (SDL_MUSTLOCK(screen)) {
-//			if (SDL_LockSurface(screen) < 0) {
-//				fprintf(stderr, "Can't lock screen: %s\n", SDL_GetError());
-//				return;
-//			}
-//		}
-//
-//		setPixel(i, gpu.curline, color_map[color]);
-//
-//		if (SDL_MUSTLOCK(screen)) {
-//			SDL_UnlockSurface(screen);
-//		}
-//
-//		x++;
-//		if (x == 8) {
-//			x = 0;
-//			lineoffs = (lineoffs + 1) % 32;
-////			tileoffset = map[mapoffs + lineoffs];
-//			tileoffset = read_byte(0x8000 + mapoffs + lineoffs);
-//			if (gpu.bg_tileset) { // Use signed tiles
-////				curTile = gpu.tileset[0x100 + (s_byte) tileoffset];
-////				curTile = (tile)(gpu.vram* + 0x100 + (s_byte) tileoffset);
-//				memcpy(&curTile, gpu.vram + 0x100 + (s_byte) tileoffset, sizeof(curTile));
-//			} else { // Use unsigned tiles
-////				curTile = gpu.tileset[tileoffset];
-////				curTile = (tile)(gpu.vram + tileoffset);
-//				memcpy(&curTile, gpu.vram + tileoffset, sizeof(curTile));
-//			}
-//		}
-//	}
 
+	if (gpu.spr_on) {  // If sprites are enabled
+		for(int i = 0; i < 40; i++) {  // for each sprite in sprite ram
+			sprite obj = gpu.sprites[i];
+
+			// Check if this sprite falls on this scanline
+			if(obj.y <= gpu.curline && (obj.y + 8) > gpu.curline) {
+				// Palette to use for this sprite
+				palette pal = obj.palette ? gpu.object_1 : gpu.object_0;
+
+				// Data for this line of the sprite
+                tile t = gpu.tileset[obj.tile_num];
+
+				// If the sprite is Y-flipped,
+				// use the opposite side of the tile
+                row tilerow = t.rows[obj.y_flip ? 7 - (gpu.curline - obj.y) : gpu.curline - obj.y];
+
+				byte color;
+
+				for(int x = 0; x < 8; x++) {
+					// FIXME: tilerow and scanrow
+					// If this pixel is still on-screen, AND
+					// if it's not color 0 (transparent), AND
+					// if this sprite has priority OR shows under the bg
+					// then render the pixel
+					if ((obj.x + x) >= 0 && (obj.x + x) < GPU_SCREEN_WIDTH &&
+						get_color(tilerow, x, 0b11100100) &&
+						/* (obj.priority || get_pixel(obj.x + x, gpu.curline) != 0xFF)) { */
+                        (obj.priority || !scanrow[obj.x + x])) {
+						// If the sprite is X-flipped,
+						// write pixels in reverse order
+						// color = pal[tilerow[obj.x_flip ? (7-x) : x]];
+						color = get_color(tilerow, obj.x_flip ? (7-x) : x, pal.palette);
+
+						/* set_pixel(obj.x + x, gpu.curline, color_map[color]); */
+                        scanrow[obj.x + x] = color;
+					}
+                }
+			}
+		}
+	}
+
+    for (int i = 0; i < GPU_SCREEN_WIDTH; i++) {
+        set_pixel(i, gpu.curline, color_map[scanrow[i]]);
+    }
 }
-
-//void render_scanline(int line, ) {
-
-//}
 
 /**
  * Blits the internal screen to SDL
  */
 void renderscreen_gpu() {
-	// for(int i = 0; i < 144; i++) {
-	// 	memcpy((void *)(SCREEN_BASE_ADDRESS + (i * SCREEN_WIDTH / 2)),
-	// 			(const void *)screen, 80);
-	// }
-
-//	INFO("GPU: Updating the screen\n");
-
-	SDL_UpdateRect(screen, 0, 0, 160, 144);
+	/* SDL_UpdateRect(screen, 0, 0, GPU_SCREEN_WIDTH, GPU_SCREEN_HEIGHT); */
+    SDL_Flip(screen);
 }
 
 byte read_byte_gpu(word address) {
-//	INFO("GPU: Reading word from 0x%04x...\n", address);
 	switch (address) {
 	case GPU_LCD_CONTROL:
-//		INFO("GPU: Read lcd_control: 0x%02x\n", gpu.lcd_control);
 		return gpu.lcd_control;
 	case GPU_LCDC_STATUS:
 		return gpu.lcdc_status;
 	case GPU_SCROLL_Y:
-//		INFO("GPU: Read scroll_y: 0x%02x\n", gpu.scroll_y);
 		return gpu.scroll_y;
 	case GPU_SCROLL_X:
-//		INFO("GPU: Read scroll_x: 0x%02x\n", gpu.scroll_x);
 		return gpu.scroll_x;
 	case GPU_CURLINE:
-//		INFO("GPU: Read curline: 0x%02x\n", gpu.curline);
 		return gpu.curline;
-	case 0xFF50:
-		return mmu.in_bios;
+	case GPU_BACKGROUND_PALETTE:
+		return gpu.background.palette;
+	case GPU_OBJECT_PALETTE_0:
+		return gpu.object_0.palette;
+	case GPU_OBJECT_PALETTE_1:
+		return gpu.object_1.palette;
+    case GPU_WINDOW_X:
+        return gpu.window_x;
+    case GPU_WINDOW_Y:
+        return gpu.window_y;
 	default:
-		WARN("Tried to read from unimplemented GPU Register!! Returning 0...\n");
+		WARN("Tried to read from unimplemented GPU Register 0x%04X!! Returning 0...\n", address);
 		return 0;
 	}
-
-	/* UNREACHABLE */
-//	__builtin_unreachable();
 }
 
 void write_byte_gpu(word address, byte val) {
@@ -349,43 +352,20 @@ void write_byte_gpu(word address, byte val) {
 		gpu.scroll_x = val;
 		break;
 	case GPU_BACKGROUND_PALETTE:
-		gpu.background_palette = val;
+		gpu.background.palette = val;
 		break;
-	case 0xFF50:
-		mmu.in_bios = val;
+	case GPU_OBJECT_PALETTE_0:
+		gpu.object_0.palette = val;
 		break;
+	case GPU_OBJECT_PALETTE_1:
+		gpu.object_1.palette = val;
+		break;
+    case GPU_WINDOW_X:
+        gpu.window_x = val;
+        break;
+    case GPU_WINDOW_Y:
+        gpu.window_y = val;
 	default:
-		WARN("Tried to write 0x%x to unimplemented address 0x%x!  Skipping...\n", val, address);
+		WARN("Tried to write 0x%02X to unimplemented address 0x%04X!  Skipping...\n", val, address);
 	}
-
-//	INFO("GPU: Wrote byte to 0x%04x, value 0x%02x\n", address, val);
-}
-
-void rendertile_gpu(word address) {
-	INFO("Rendering tile...\n");
-	word eff_addr = address & 0xFFF0;
-	for (int i = 0; i < 8; i++) {
-		for (int x = 0; x < 8; x ++) {
-			byte low = gpu.vram[eff_addr + 2*i];
-			byte high = gpu.vram[eff_addr + 2*i + 1];
-
-			byte color_index = (byte)(((high >> x) & 0x1) << 1) | (byte)((low >> x) & 0x1);
-			byte color = (gpu.background_palette >> (2 * color_index)) & 0x03;
-
-			if (SDL_MUSTLOCK(screen)) {
-				if (SDL_LockSurface(screen) < 0) {
-					fprintf(stderr, "Can't lock screen: %s\n", SDL_GetError());
-					return;
-				}
-			}
-
-			setPixel(162 + (address & 0x00F0)/2 + x, ((address & 0x0F00) >> 8) + i, color_map[color]);
-
-			if (SDL_MUSTLOCK(screen)) {
-				SDL_UnlockSurface(screen);
-			}
-		}
-	}
-
-	SDL_UpdateRect(screen, 161, 0, 289 - 161, 144);
 }

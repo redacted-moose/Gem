@@ -32,17 +32,17 @@ typedef struct cpu_t {
 	// General purpose / Flags
 	union {
 		struct {
-			byte   : 4;
-			byte ca : 1;
-			byte hc : 1;
-			byte n : 1;
-			byte z : 1;
-//			byte f;
-			byte a : 8;
+			byte    : 8;
+			byte a	: 8;
 		};
 
 		struct {
-			byte    : 8;
+			byte	: 4;
+			byte ca	: 1;
+			byte hc	: 1;
+			byte n	: 1;
+			byte z	: 1;
+
 			byte a0 : 1;
 			byte a1 : 1;
 			byte a2 : 1;
@@ -164,11 +164,12 @@ typedef struct cpu_t {
 	// Array to store instruction function pointers
 	opcode *opcodes;
 
-} CPU;
+} CPUSTATE;
 
-extern CPU cpu;
+extern CPUSTATE cpu;
 
 void reset_cpu();
-void execute();
+void step_cpu();
+void check_interrupts();
 
 #endif /* CPU_H_ */

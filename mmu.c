@@ -12,8 +12,9 @@
 #include "cpu.h"
 #include "mmu.h"
 #include "gpu.h"
+#include "input.h"
 
-MMU mmu = {.bios = {0x31, 0xFE, 0xFF, 0xAF, 0x21, 0xFF, 0x9F, 0x32, 0xCB, 0x7C,
+MMUSTATE mmu = {.bios = {0x31, 0xFE, 0xFF, 0xAF, 0x21, 0xFF, 0x9F, 0x32, 0xCB, 0x7C,
 		0x20, 0xFB, 0x21, 0x26, 0xFF, 0x0E, 0x11, 0x3E, 0x80, 0x32,
 		0xE2, 0x0C, 0x3E, 0xF3, 0xE2, 0x32, 0x3E, 0x77, 0x77, 0x3E,
 		0xFC, 0xE0, 0x47, 0x11, 0x04, 0x01, 0x21, 0x10, 0x80, 0x1A,
@@ -40,13 +41,15 @@ MMU mmu = {.bios = {0x31, 0xFE, 0xFF, 0xAF, 0x21, 0xFF, 0x9F, 0x32, 0xCB, 0x7C,
 		0xF5, 0x06, 0x19, 0x78, 0x86, 0x23, 0x05, 0x20, 0xFB, 0x86,
 		0x20, 0xFE, 0x3E, 0x01, 0xE0, 0x50}};
 
-void reset_mmu()
-{
+void reset_mmu() {
 	mmu.in_bios = true;
 }
 
-void load_rom(const char *path)
-{
+MMUSTATE get_mmu() {
+	return mmu;
+}
+
+void load_rom(const char *path) {
 	FILE *romfile = fopen(path, "rb");
 	if(romfile == NULL) {
 		ERROR("File error: does not exist?\n");
@@ -67,145 +70,172 @@ void load_rom(const char *path)
 	}
 
 	long result = fread(mmu.rom, sizeof(byte), size, romfile);
-	INFO("result is %ld\n", result);
+	INFO("Result is %ld\n", result);
 	if(result != size) {
 		ERROR("Reading error\n");
 		exit(3);
 	}
 
-//	for (long i = 0; i < size; i++) {
-//		mmu.rom[i] = (byte)fgetc(romfile);
-//	}
-
 	fclose(romfile);
 
 	// Allocate ERAM based on rom values at specific addresses and size of rom
+    INFO("Internal RAM: ");
 	switch(mmu.rom[0x0149]) {
 	case 0: // No RAM
+        // Optionally allocate 8 KB external ram
+        PRINT("No internal RAM\n");
 		break;
 	case 1: // 2 KB = 1 Bank
+        PRINT("1 Bank (2 KB)\n");
 		mmu.eram = (byte *)malloc(2048 * sizeof(byte));
 		break;
 	case 2: // 8 KB = 1 Bank
+        PRINT("1 Bank (8 KB)\n");
 		mmu.eram = (byte *)malloc(8192 * sizeof(byte));
 		break;
 	case 3: // 32 KB = 4 Banks
+        PRINT("4 Banks (32 KB)\n");
 		mmu.eram = (byte *)malloc(32768 * sizeof(byte));
 		break;
 	case 4: // 128 KB = 16 Banks
+        PRINT("16 Banks (128 KB)\n");
 		mmu.eram = (byte *)malloc(128 * 1024 * sizeof(byte));
 		break;
 	}
 
 	// Set cartridge types
-	switch(mmu.rom[0x0147]) {
-	case 0: // ROM Only
+    mmu.rom_type = mmu.rom[0x0147];
+    #ifdef DEBUG
+    INFO("Rom type: ");
+	switch(mmu.rom_type) {
+	case ROM_ONLY: // ROM Only
+        PRINT("ROM only\n");
 		break;
-	case 1: // ROM + MBC1
+	case MBC1: // ROM + MBC1
+        PRINT("MBC1\n");
 		break;
-	case 2: // ROM + MBC1 + RAM
+	case MBC1_RAM: // ROM + MBC1 + RAM
+        PRINT("MBC1 + RAM\n");
 		break;
-	case 3: // ROM + MBC1 + RAM + BATT
+	case MBC1_RAM_BATT: // ROM + MBC1 + RAM + BATT
+        PRINT("MBC1 + RAM + BATT\n");
 		break;
-	case 5: // ROM + MBC2
+	case MBC2: // ROM + MBC2
+        PRINT("MBC2\n");
 		break;
-	case 6: // ROM + MBC2 + BATT
+	case MBC2_BATT: // ROM + MBC2 + BATT
+        PRINT("MBC2 + BATT\n");
 		break;
-	case 8: // ROM + RAM
+	case RAM: // ROM + RAM
+        PRINT("RAM\n");
 		break;
-	case 9: // ROM + RAM + BATT
+	case RAM_BATT: // ROM + RAM + BATT
+        PRINT("RAM + BATT\n");
 		break;
-	case 0xB: // ROM + MMMO1
+	case MMMO1: // ROM + MMMO1
+        PRINT("MMMO1\n");
 		break;
-	case 0xC: // ROM + MMMO1 + SRAM
+	case MMMO1_SRAM: // ROM + MMMO1 + SRAM
+        PRINT("MMMO1 + SRAM\n");
 		break;
 	case 0xD: // ROM + MMMO1 + SRAM + BATT
+        PRINT("MMMO1 + SRAM + BATT\n");
 		break;
 	case 0xF: // ROM + MBC3 + TIMER + BATT
+        PRINT("MBC3 + TIMER + BATT\n");
 		break;
 	case 0x10: // ROM + MBC3 + TIMER + RAM + BATT
+        PRINT("MBC3 + TIMER + RAM + BATT\n");
 		break;
 	case 0x11: // ROM + MBC3
+        PRINT("MBC3\n");
 		break;
 	case 0x12: // ROM + MBC3 + RAM
+        PRINT("MBC3 + RAM\n");
 		break;
 	case 0x13: // ROM + MBC3 + RAM + BATT
+        PRINT("MBC3 + RAM + BATT\n");
 		break;
 	case 0x19: // ROM + MBC5
+        PRINT("MBC5\n");
 		break;
 	case 0x1A: // ROM + MBC5 + RAM
+        PRINT("MBC5 + RAM\n");
 		break;
 	case 0x1B: // ROM + MBC5 + RAM + BATT
+        PRINT("MBC5 + RAM + BATT\n");
 		break;
 	case 0x1C: // ROM + MBC5 + RUMBLE
+        PRINT("MBC5 + RUMBLE\n");
 		break;
 	case 0x1D: // ROM + MBC5 + RUMBLE + SRAM
+        PRINT("MBC5 + RUMBLE + SRAM\n");
 		break;
 	case 0x1E: // ROM + MBC% + RUMBLE + SRAM + BATT
+        PRINT("MBC5 + RUMBLE + SRAM + BATT\n");
 		break;
-	case 0x1F: // Pocket Camera
+	case 0xFC: // Pocket Camera
+        PRINT("Pocket Camera\n");
 		break;
 	case 0xFD: // Bandai TAMA5
+        PRINT("Bandai TAMA5\n");
 		break;
 	case 0xFE: // Hudson HuC-3
+        PRINT("Hudson HuC-3\n");
 		break;
 	case 0xFF: // Hudson HuC-1
+        PRINT("Hudson HuC-1\n");
 		break;
-
+    default:
+        PRINT("Unknown 0x%02X", mmu.rom_type);
 	}
+    #endif
 }
 
-byte read_byte(word address)
-{
+byte read_byte(word address) {
 	switch(address & 0xF000) {
 	// Bios or Bank 0
 	case 0x0000:
-		if(mmu.in_bios == true) {
+		if(mmu.in_bios) {
 			if(address < 0x0100) {
-//				INFO("MMU: Read BIOS at 0x%04x, got 0x%02x\n", address, mmu.bios[address]);
 				return mmu.bios[address];
-			} else if(cpu.pc == 0x100)
+			} else if(cpu.pc == 0x100) {
 				mmu.in_bios = false;
+            }
 		}
-//		INFO("MMU: Read rom at 0x%04x, got 0x%02x\n", address, mmu.rom[address]);
-		return mmu.rom[address];
 
-		// Bank 0
+        return (mmu.rom != NULL) ? mmu.rom[address] : 0xFF;
+
+    // Bank 0
 	case 0x1000:
 	case 0x2000:
 	case 0x3000:
-//		INFO("MMU: Read rom at 0x%04x, got 0x%02x\n", address, mmu.rom[address]);
-		return mmu.rom[address];
+        return (mmu.rom != NULL) ? mmu.rom[address] : 0xFF;
 
-		// Bank 1 (No bank switching yet)
+    // Bank 1 (No bank switching yet)
 	case 0x4000:
 	case 0x5000:
 	case 0x6000:
 	case 0x7000:
-//		INFO("MMU: Read rom at 0x%04x, got 0x%02x\n", address, mmu.rom[address]);
-		return mmu.rom[address];
+		return (mmu.rom != NULL) ? mmu.rom[address] : 0xFF;
 
-		// Graphics VRAM
+    // Graphics VRAM
 	case 0x8000:
 	case 0x9000:
-		// INFO("MMU: Read GPU vram at 0x%04x, got 0x%02x\n", address, gpu.vram[address & 0x1FFF]);
 		return gpu.vram[address & 0x1FFF];
 
-		// External RAM (ERAM)
+    // External RAM (ERAM)
 	case 0xA000:
 	case 0xB000:
-//		INFO("MMU: Read external ram at 0x%04x, got 0x%02x\n", address, mmu.eram[address & 0x1FFF]);
-		return mmu.eram[address & 0x1FFF]; // DONE?: need to wrap address into addressable range for eram
+        return (mmu.eram != NULL) ? mmu.eram[address & 0x1FFF] : 0xFF;
 
-		// Working RAM (WRAM)
+    // Working RAM (WRAM)
 	case 0xC000:
 	case 0xD000:
-//		INFO("MMU: Read work ram at 0x%04x, got 0x%02x\n", address, mmu.wram[address & 0x1FFF]);
 		return mmu.wram[address & 0x1FFF];
 
-		// Working RAM (Shadow)
+    // Working RAM (Shadow)
 	case 0xE000:
-//		INFO("MMU: Read work ram shadow at 0x%04x, got 0x%02x\n", address, mmu.wram[address & 0x1FFF]);
 		return mmu.wram[address & 0x1FFF];
 
 	case 0xF000:
@@ -224,33 +254,34 @@ byte read_byte(word address)
 		case 0xB00:
 		case 0xC00:
 		case 0xD00:
-//			INFO("MMU: Read work ram shadow at 0x%04x, got 0x%02x\n", address, mmu.wram[address & 0x1FFF]);
 			return mmu.wram[address & 0x1FFF];
 
 		case 0xE00:
 			if(address < 0xFEA0) {
-//				INFO("MMU: Read GPU oam memory at 0x%04x, got 0x%02x\n", address, gpu.oam[address & 0xFF]);
 				return gpu.oam[address & 0xFF];
 			} else {
 				return 0;
 			}
 
 		case 0xF00:
-			if(address >= 0xFF80) {
-//				INFO("MMU: Read zram at 0x%04x, got 0x%02x\n", address, mmu.zram[address & 0x7F]);
-				return mmu.zram[address & 0x7F];
-			} else {
-//				INFO("MMU: Read I/O at 0x%04x, got 0x%02x\n", address);
-				// I/O control -- unimplemented
-//				return 0;
-				switch(address & 0x00F0) {
-				case 0x40:
-				case 0x50:
-				case 0x60:
-				case 0x70:
-					return read_byte_gpu(address);
-				}
-				return 0;
+            if (address == 0xFFFF) {
+                return mmu.i_enable.value;
+            } else if(address >= 0xFF80) {
+                return mmu.zram[address & 0x7F];
+			} else if (address >= 0xFF40) {
+                if (address == 0xFF50) {
+                    return !mmu.in_bios;
+                } else {
+                    return read_byte_gpu(address);
+                }
+			} else switch (address & 0x3F) {
+				case 0x00:
+                    if (address == 0xFF0F) {
+                        return mmu.i_flag.value;
+                    } else {
+                        return read_byte_key(address);
+                    }
+				default: return 0;
 			}
 		}
 	}
@@ -259,39 +290,85 @@ byte read_byte(word address)
 	__builtin_unreachable();
 }
 
-void write_byte(word address, byte val)
-{
+void write_byte(word address, byte val) {
 	switch(address & 0xF000) {
 	case 0x8000:
 	case 0x9000:
-		// INFO("MMU: Wrote 0x%02x to 0x%04x (GPU vram)\n", val, address);
 		gpu.vram[address & 0x1FFF] = val;
-		// rendertile_gpu(address);
 		break;
+    case 0xA000:
+    case 0xB000:
+        if (mmu.eram != NULL) {
+            mmu.eram[address & 0x1FFF] = val;
+        }
+        break;
+    case 0xC000:
+    case 0xD000:
+        mmu.wram[address & 0x1FFF] = val;
+        break;
+    case 0xE000:
+        mmu.wram[address & 0x1FFF] = val;
+        break;
 	case 0xF000:
 		switch(address & 0x0F00) {
-		case 0xF00:
-			if (address >= 0xFF80) {
-//				INFO("MMU: Wrote 0x%02x to 0x%04x (zram)\n", val, address);
-				mmu.zram[address & 0x7F] = val;
-			} else {
-				switch (address & 0x00F0) {
-				case 0x40: case 0x50: case 0x60: case 0x70:
-					write_byte_gpu(address, val);
-					break;
-				}
+		case 0xE00:
+			if (address < 0xFEA0) {
+				gpu.oam[address & 0xFF] = val;
 			}
+			break;
+        case 0xF00:
+            if (address == 0xFFFF) {
+                mmu.i_enable.value = val;
+            } else if (address >= 0xFF80) {
+                mmu.zram[address & 0x7F] = val;
+            } else {
+                switch (address & 0x00F0) {
+                case 0x00:
+                    if (address == 0xFF00) {
+                        write_byte_key(address, val);
+                    } else if (address == 0xFF0F) {
+                        mmu.i_flag.value = val;
+                    }
+                    break;
+                case 0x40:
+                    if (address == 0xFF46) {
+                        INFO("DMA requested from 0x%02X00-0x%02X9F to 0xFE00-0xFE9F\n", val, val);
+                        mmu.dma = val;
+                        mmu.dma_offset = 0;
+                    } else {
+                        write_byte_gpu(address, val);
+                    }
+                    break;
+                case 0x50:
+                    if (address == 0xFF50) {
+                        mmu.in_bios = !val;
+                    } else {
+                        write_byte_gpu(address, val);
+                    }
+                    break;
+                case 0x60:
+                case 0x70:
+                    write_byte_gpu(address, val);
+                    break;
+                }
+            }
 		}
 	}
 }
 
-word read_word(word address)
-{
+word read_word(word address) {
 	return (word)read_byte(address) | ((word)read_byte(address + 1) << 8);
 }
 
-void write_word(word address, word val)
-{
+void write_word(word address, word val) {
 	write_byte(address, (byte)(val & 0x00FF));
 	write_byte(address + 1, (byte)((val >> 8) & 0x00FF));
+}
+
+void do_dma() {
+    // Need to disable other areas of memory when this is happening.
+    if (mmu.dma_offset <= 0x9F) {
+        write_byte(0xFE00 + mmu.dma_offset, read_byte(((word)mmu.dma << 8) + mmu.dma_offset));
+        mmu.dma_offset++;
+    }
 }

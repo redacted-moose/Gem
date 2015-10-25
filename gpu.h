@@ -11,59 +11,40 @@
 #include "gem.h"
 
 // Memory locations
-#define VRAM_TILE_DATA_TABLE_1		0x8000
-#define VRAM_TILE_DATA_TABLE_0		0x9000
-#define VRAM_BACKGROUND_TILE_MAP_0	0x9800
-#define VRAM_BACKGROUND_TILE_MAP_1	0x9C00
+#define VRAM_TILE_DATA_TABLE_1      0x8000
+#define VRAM_TILE_DATA_TABLE_0	    0x9000
+#define VRAM_BACKGROUND_TILE_MAP_0  0x9800
+#define VRAM_BACKGROUND_TILE_MAP_1  0x9C00
 
 // Register aliases
-#define GPU_LCD_CONTROL				0xFF40
-#define GPU_LCDC_STATUS				0xFF41
-#define GPU_SCROLL_Y				0xFF42
-#define GPU_SCROLL_X				0xFF43
-#define GPU_CURLINE					0xFF44
-#define GPU_BACKGROUND_PALETTE		0xFF47
+#define GPU_LCD_CONTROL             0xFF40
+#define GPU_LCDC_STATUS             0xFF41
+#define GPU_SCROLL_Y                0xFF42
+#define GPU_SCROLL_X                0xFF43
+#define GPU_CURLINE                 0xFF44
+#define GPU_CURLINE_COMPARE         0xFF45
+#define GPU_BACKGROUND_PALETTE      0xFF47
+#define GPU_OBJECT_PALETTE_0        0xFF48
+#define GPU_OBJECT_PALETTE_1        0xFF49
+#define GPU_WINDOW_Y                0xFF4A
+#define GPU_WINDOW_X                0xFF4B // Actually window's x position - 7
+
+#define GPU_SCREEN_WIDTH			160
+#define GPU_SCREEN_HEIGHT			144
 
 typedef enum gpu_mode {
 	HBLANK = 0, VBLANK = 1, OAM_READ = 2, VRAM_READ = 3
 } gpu_mode;
 
+#define HBLANK_CYCLE_COUNT     204  // Between 201-207 clocks
+#define VBLANK_CYCLE_COUNT     456  // 456 clocks per scanline - 10 scanlines of VBLANK - total 4560 cycles
+#define OAM_READ_CYCLE_COUNT   80   // Between 77-83 clocks
+#define VRAM_READ_CYCLE_COUNT  172  // Between 169-175 clocks
+// Complete screen refresh should happen every 70224 clock cycles
+
 typedef struct row_t {
-
-	// union {
-
-		byte a;
-
-		// struct {
-		// 	byte a0 :1;
-		// 	byte a1 :1;
-		// 	byte a2 :1;
-		// 	byte a3 :1;
-		// 	byte a4 :1;
-		// 	byte a5 :1;
-		// 	byte a6 :1;
-		// 	byte a7 :1;
-		// };
-
-	// };
-
-	// union {
-
-		byte b;
-
-		// struct {
-	// 		byte b0 :1;
-	// 		byte b1 :1;
-	// 		byte b2 :1;
-	// 		byte b3 :1;
-	// 		byte b4 :1;
-	// 		byte b5 :1;
-	// 		byte b6 :1;
-	// 		byte b7 :1;
-	// 	};
-
-	// };
-
+    byte a;
+    byte b;
 } row;
 
 typedef struct tile_t { // Make this a row or half row? sizeof(tile) = 16 bytes
@@ -71,7 +52,7 @@ typedef struct tile_t { // Make this a row or half row? sizeof(tile) = 16 bytes
 } tile;
 
 typedef struct sprite_t {
-	
+
 	struct {
 		byte			:4;
 		byte palette	:1;
@@ -86,19 +67,25 @@ typedef struct sprite_t {
 
 } sprite;
 
+typedef union palette_t {
+	struct {
+		byte color0 :2;
+		byte color1 :2;
+		byte color2 :2;
+		byte color3 :2;
+	};
+
+	byte palette;
+} palette;
+
 typedef struct gpu_t {
-
 	union {
-
-		byte vram[0x2000]; // 8 KB of VRAM - restructure as array of tiles + 2 1KB tilemaps
-		// union of vram byte array and tileset/maps?
-
+		byte vram[0x2000]; // 8 KB of VRAM
 		struct {
 			tile tileset[384];
 			byte map0[1024];
 			byte map1[1024];
 		};
-
 	};
 
 	union {
@@ -107,20 +94,15 @@ typedef struct gpu_t {
 	};
 
 	union {
-
 		struct {
-			byte mode : 2;
+			gpu_mode mode : 2;
 			byte : 6;
 		};
-
 		byte lcdc_status;
-
 	};
 
 	// GPU registers
-
 	union {
-
 		struct {
 			// Bit 0
 			byte bg_on			:1;
@@ -131,7 +113,7 @@ typedef struct gpu_t {
 			byte win_on			:1;
 			byte win_tilemap	:1;
 			byte display_on		:1;
-		// Bit 7
+      // Bit 7
 		};
 
 		byte lcd_control;
@@ -140,23 +122,18 @@ typedef struct gpu_t {
 	byte scroll_x;
 	byte scroll_y;
 	byte curline;
+    byte curline_compare;
+    byte window_x;
+    byte window_y;
 
-	union {
+	palette background;
 
-		struct {
-			byte color0 :2;
-			byte color1 :2;
-			byte color2 :2;
-			byte color3 :2;
-		};
+	palette object_0;
+	palette object_1;
 
-		byte background_palette;
+} GPUSTATE;
 
-	};
-
-} GPU;
-
-extern GPU gpu;
+extern GPUSTATE gpu;
 
 void reset_gpu();
 void step_gpu();

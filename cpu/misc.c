@@ -5,8 +5,10 @@
  *      Author: sadlercr
  */
 
+#include <stdlib.h>
 #include "../gem.h"
 #include "../cpu.h"
+#include "../mmu.h"
 
 void NOP()
 {
@@ -43,6 +45,6 @@ void EI()
 }
 
 void XX() {
-	ERROR("CPU tried to execute an invalid opcode! Exiting...");
+	ERROR("CPU tried to execute an invalid opcode 0x%02X at 0x%04X! Exiting...", read_byte(cpu.pc), cpu.pc);
 	exit(-1);
 }
