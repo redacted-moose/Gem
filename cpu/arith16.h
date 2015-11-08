@@ -8,18 +8,20 @@
 #ifndef ARITH16_H_
 #define ARITH16_H_
 
-void INC_BC();
-void ADD_HL_BC();
-void DEC_BC();
-void INC_DE();
-void ADD_HL_DE();
-void DEC_DE();
-void INC_HL();
-void ADD_HL_HL();
-void DEC_HL();
-void INC_SP();
-void ADD_HL_SP();
-void DEC_SP();
-void ADD_SP_r8();
+#include "../common.h"
+#include "../gem.h"
+#include "../cpu.h"
+#include "../mmu.h"
+
+#define DECLARE_INC_R16(REG16) void INC_ ## REG16 (struct machine_t *)
+#define DECLARE_DEC_R16(REG16) void DEC_ ## REG16 (struct machine_t *)
+#define DECLARE_ADD_HL_R16(REG16) void ADD_HL_ ## REG16 (struct machine_t *)
+
+
+DECLARE_OP_REGS16(INC)
+DECLARE_OP_REGS16(DEC)
+DECLARE_OP_REGS16(ADD_HL)
+
+void ADD_SP_r8(struct machine_t *);
 
 #endif /* ARITH16_H_ */

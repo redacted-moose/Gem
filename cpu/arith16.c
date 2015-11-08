@@ -9,105 +9,54 @@
 #include "../mmu.h"
 #include "arith16.h"
 
-void INC_BC()
-{
-	cpu.bc++;
-	cpu.t += 8;
-	cpu.last_t = 8;
-}
 
-void ADD_HL_BC()
-{
-	word before = cpu.hl;
-	cpu.hl += cpu.bc;
-	cpu.n = 0;
-	cpu.hc = ((before & 0x0FFF) > (cpu.hl & 0x0FFF))? 1 : 0;
-	cpu.ca = (before > cpu.hl)? 1 : 0;
-}
+#define INC_R16(REG16, reg16)                \
+    void INC_ ## REG16 (struct machine_t *gem) {    \
+        struct cpu_t *cpu = gem->cpu;               \
+        cpu->reg16++;                               \
+    }
 
-void DEC_BC()
-{
-	cpu.bc--;
-	cpu.t += 8;
-	cpu.last_t = 8;
-}
+INC_R16(BC, bc)
+INC_R16(DE, de)
+INC_R16(HL, hl)
+INC_R16(SP, sp)
 
-void INC_DE()
-{
-	cpu.de++;
-	cpu.t += 8;
-	cpu.last_t = 8;
-}
 
-void ADD_HL_DE()
-{
-	word before = cpu.hl;
-	cpu.hl += cpu.de;
-	cpu.n = 0;
-	cpu.hc = ((before & 0x0FFF) > (cpu.hl & 0x0FFF))? 1 : 0;
-	cpu.ca = (before > cpu.hl)? 1 : 0;
-}
+#define DEC_R16(REG16, reg16)                \
+    void DEC_ ## REG16 (struct machine_t *gem) {    \
+        struct cpu_t *cpu = gem->cpu;               \
+        cpu->reg16--;                               \
+    }
 
-void DEC_DE()
-{
-	cpu.de--;
-	cpu.t += 8;
-	cpu.last_t = 8;
-}
+DEC_R16(BC, bc)
+DEC_R16(DE, de)
+DEC_R16(HL, hl)
+DEC_R16(SP, sp)
 
-void INC_HL()
-{
-	cpu.hl++;
-	cpu.t += 8;
-	cpu.last_t = 8;
-}
 
-void ADD_HL_HL()
-{
-	word before = cpu.hl;
-	cpu.hl += cpu.hl;
-	cpu.n = 0;
-	cpu.hc = ((before & 0x0FFF) > (cpu.hl & 0x0FFF))? 1 : 0;
-	cpu.ca = (before > cpu.hl)? 1 : 0;
-}
+#define ADD_HL_R16(REG16, reg16)                             \
+    void ADD_HL_ ## REG16 (struct machine_t *gem) {                 \
+        struct cpu_t *cpu = gem->cpu;                               \
+        word before = cpu->hl;                                      \
+        cpu->hl += cpu->reg16;                                      \
+        cpu->n = 0;                                                 \
+        cpu->hc = ((before & 0x0FFF) > (cpu->hl & 0x0FFF))? 1 : 0;  \
+        cpu->ca = (before > cpu->hl)? 1 : 0;                        \
+    }
 
-void DEC_HL()
-{
-	cpu.hl--;
-	cpu.t += 8;
-	cpu.last_t = 8;
-}
+ADD_HL_R16(BC, bc)
+ADD_HL_R16(DE, de)
+ADD_HL_R16(HL, hl)
+ADD_HL_R16(SP, sp)
 
-void INC_SP()
-{
-	cpu.sp++;
-	cpu.t += 8;
-	cpu.last_t = 8;
-}
 
-void ADD_HL_SP()
-{
-	word before = cpu.hl;
-	cpu.hl += cpu.sp;
-	cpu.n = 0;
-	cpu.hc = ((before & 0x0FFF) > (cpu.hl & 0x0FFF))? 1 : 0;
-	cpu.ca = (before > cpu.hl)? 1 : 0;
-}
-
-void DEC_SP()
-{
-	cpu.sp--;
-	cpu.t += 8;
-	cpu.last_t = 8;
-}
-
-void ADD_SP_r8()
-{
-	word before = cpu.sp;
-	cpu.sp += read_byte(cpu.pc);
-	cpu.pc++;
-	cpu.z = 0;
-	cpu.n = 0;
-	cpu.hc = ((before & 0x0FFF) > (cpu.hl & 0x0FFF))? 1 : 0;
-	cpu.ca = (before > cpu.hl)? 1 : 0;
+void ADD_SP_r8(struct machine_t *gem) {
+    struct cpu_t *cpu = gem->cpu;
+	word before = cpu->sp;
+	cpu->sp += read_byte(gem, cpu->pc);
+	cpu->pc++;
+	cpu->z = 0;
+	cpu->n = 0;
+	cpu->hc = ((before & 0x0FFF) > (cpu->hl & 0x0FFF))? 1 : 0;
+	cpu->ca = (before > cpu->hl)? 1 : 0;
 }

@@ -12,25 +12,9 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-typedef uint8_t byte;
-typedef uint16_t word;
-typedef int8_t s_byte; // Signed byte
-typedef int16_t s_word; // Signed word
-
-#define PRINT(...)  fprintf(stderr, __VA_ARGS__)
-#define ERROR(...)  PRINT("ERROR: " __VA_ARGS__)
-
-#if defined (DEBUG)
-#define INFO(...)	PRINT("DEBUG: " __VA_ARGS__)
-#define WARN(...)	PRINT("WARNING: " __VA_ARGS__)
-#elif defined (WARN)
-#define INFO(...)   ((void)0)
-#define WARN(...)   PRINT("WARNING: " __VA_ARGS__)
-#else
-#define INFO(...)   ((void)0)
-#define WARN(...)   ((void)0)
-#endif
-
-extern bool run;
+#include "common.h"
+#include "cpu.h"
+#include "gpu.h"
+#include "mmu.h"
 
 #endif /* GEM_H_ */

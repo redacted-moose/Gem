@@ -8,104 +8,43 @@
 #ifndef ARITH8_H_
 #define ARITH8_H_
 
-/*
- * arith8.c
- *
- *  Created on: Aug 16, 2014
- *      Author: sadlercr
- */
+#include "../common.h"
+#include "../gem.h"
+#include "../cpu.h"
 
-void INC_B();
-void DEC_B();
-void INC_C();
-void DEC_C();
-void INC_D();
-void DEC_D();
-void INC_E();
-void DEC_E();
-void INC_H();
-void DEC_H();
-void DAA();
-void INC_L();
-void DEC_L();
-void CPL();
-void INC_IHL();
-void DEC_IHL();
-void SCF();
-void INC_A();
-void DEC_A();
-void CCF();
-void ADD_A_B();
-void ADD_A_C();
-void ADD_A_D();
-void ADD_A_E();
-void ADD_A_H();
-void ADD_A_L();
-void ADD_A_IHL();
-void ADD_A_A();
-void ADC_A_B();
-void ADC_A_C();
-void ADC_A_D();
-void ADC_A_E();
-void ADC_A_H();
-void ADC_A_L();
-void ADC_A_IHL();
-void ADC_A_A();
-void SUB_B();
-void SUB_C();
-void SUB_D();
-void SUB_E();
-void SUB_H();
-void SUB_L();
-void SUB_IHL();
-void SUB_A();
-void SBC_A_B();
-void SBC_A_C();
-void SBC_A_D();
-void SBC_A_E();
-void SBC_A_H();
-void SBC_A_L();
-void SBC_A_IHL();
-void SBC_A_A();
-void AND_B();
-void AND_C();
-void AND_D();
-void AND_E();
-void AND_H();
-void AND_L();
-void AND_IHL();
-void AND_A();
-void XOR_B();
-void XOR_C();
-void XOR_D();
-void XOR_E();
-void XOR_H();
-void XOR_L();
-void XOR_IHL();
-void XOR_A();
-void OR_B();
-void OR_C();
-void OR_D();
-void OR_E();
-void OR_H();
-void OR_L();
-void OR_IHL();
-void OR_A();
-void CP_B();
-void CP_C();
-void CP_D();
-void CP_E();
-void CP_H();
-void CP_L();
-void CP_IHL();
-void CP_A();
-void ADD_A_d8();
-void ADC_A_d8();
-void SUB_d8();
-void SBC_A_d8();
-void AND_d8();
-void XOR_d8();
-void OR_d8();
-void CP_d8();
+#define DECLARE_INC_R8(REG8) void INC_ ## REG8 (struct machine_t *)
+#define DECLARE_DEC_R8(REG8) void DEC_ ## REG8 (struct machine_t *)
+#define DECLARE_ADD_A_R8(REG8) void ADD_A_ ## REG8 (struct machine_t *)
+#define DECLARE_ADC_A_R8(REG8) void ADC_A_ ## REG8 (struct machine_t *)
+#define DECLARE_SUB_R8(REG8) void SUB_ ## REG8 (struct machine_t *)
+#define DECLARE_SBC_A_R8(REG8) void SBC_A_ ## REG8 (struct machine_t *)
+#define DECLARE_AND_R8(REG8) void AND_ ## REG8 (struct machine_t *)
+#define DECLARE_XOR_R8(REG8) void XOR_ ## REG8 (struct machine_t *)
+#define DECLARE_OR_R8(REG8) void OR_ ## REG8 (struct machine_t *)
+#define DECLARE_CP_R8(REG8) void CP_ ## REG8 (struct machine_t *)
+
+void DAA(struct machine_t *);
+void CPL(struct machine_t *);
+void SCF(struct machine_t *);
+void CCF(struct machine_t *);
+void ADD_A_d8(struct machine_t *);
+void ADC_A_d8(struct machine_t *);
+void SUB_d8(struct machine_t *);
+void SBC_A_d8(struct machine_t *);
+void AND_d8(struct machine_t *);
+void XOR_d8(struct machine_t *);
+void OR_d8(struct machine_t *);
+void CP_d8(struct machine_t *);
+
+DECLARE_OP_REGS(INC)
+DECLARE_OP_REGS(DEC)
+DECLARE_OP_REGS(ADD_A)
+DECLARE_OP_REGS(ADC_A)
+DECLARE_OP_REGS(SUB)
+DECLARE_OP_REGS(SBC_A)
+DECLARE_OP_REGS(AND)
+DECLARE_OP_REGS(XOR)
+DECLARE_OP_REGS(OR)
+DECLARE_OP_REGS(CP)
 
 #endif /* ARITH8_H_ */

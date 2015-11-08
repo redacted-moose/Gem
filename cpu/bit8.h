@@ -8,277 +8,59 @@
 #ifndef BIT8_H_
 #define BIT8_H_
 
-void RLCA();
-void RRCA();
-void RLA();
-void RRA();
-void PREFIX_CB();
+#include "../common.h"
+#include "../gem.h"
 
-void RLC_B();
-void RLC_C();
-void RLC_D();
-void RLC_E();
-void RLC_H();
-void RLC_L();
-void RLC_IHL();
-void RLC_A();
+#define DECLARE_OP_REGS(OP)                     \
+    void OP ## _B (struct machine_t *gem);      \
+    void OP ## _C (struct machine_t *gem);      \
+    void OP ## _D (struct machine_t *gem);      \
+    void OP ## _E (struct machine_t *gem);      \
+    void OP ## _H (struct machine_t *gem);      \
+    void OP ## _L (struct machine_t *gem);      \
+    void OP ## _IHL (struct machine_t *gem);    \
+    void OP ## _A (struct machine_t *gem);
 
-void RRC_B();
-void RRC_C();
-void RRC_D();
-void RRC_E();
-void RRC_H();
-void RRC_L();
-void RRC_IHL();
-void RRC_A();
+void RLCA(struct machine_t *gem);
+void RRCA(struct machine_t *gem);
+void RLA(struct machine_t *gem);
+void RRA(struct machine_t *gem);
+void PREFIX_CB(struct machine_t *gem);
 
-void RL_B();
-void RL_C();
-void RL_D();
-void RL_E();
-void RL_H();
-void RL_L();
-void RL_IHL();
-void RL_A();
+DECLARE_OP_REGS(RLC)
+DECLARE_OP_REGS(RRC)
+DECLARE_OP_REGS(RL)
+DECLARE_OP_REGS(RR)
+DECLARE_OP_REGS(SLA)
+DECLARE_OP_REGS(SRA)
+DECLARE_OP_REGS(SWAP)
+DECLARE_OP_REGS(SRL)
 
-void RR_B();
-void RR_C();
-void RR_D();
-void RR_E();
-void RR_H();
-void RR_L();
-void RR_IHL();
-void RR_A();
+DECLARE_OP_REGS(BIT_0)
+DECLARE_OP_REGS(BIT_1)
+DECLARE_OP_REGS(BIT_2)
+DECLARE_OP_REGS(BIT_3)
+DECLARE_OP_REGS(BIT_4)
+DECLARE_OP_REGS(BIT_5)
+DECLARE_OP_REGS(BIT_6)
+DECLARE_OP_REGS(BIT_7)
 
-void SLA_B();
-void SLA_C();
-void SLA_D();
-void SLA_E();
-void SLA_H();
-void SLA_L();
-void SLA_IHL();
-void SLA_A();
+DECLARE_OP_REGS(RES_0)
+DECLARE_OP_REGS(RES_1)
+DECLARE_OP_REGS(RES_2)
+DECLARE_OP_REGS(RES_3)
+DECLARE_OP_REGS(RES_4)
+DECLARE_OP_REGS(RES_5)
+DECLARE_OP_REGS(RES_6)
+DECLARE_OP_REGS(RES_7)
 
-void SRA_B();
-void SRA_C();
-void SRA_D();
-void SRA_E();
-void SRA_H();
-void SRA_L();
-void SRA_IHL();
-void SRA_A();
-
-void SWAP_B();
-void SWAP_C();
-void SWAP_D();
-void SWAP_E();
-void SWAP_H();
-void SWAP_L();
-void SWAP_IHL();
-void SWAP_A();
-
-void SRL_B();
-void SRL_C();
-void SRL_D();
-void SRL_E();
-void SRL_H();
-void SRL_L();
-void SRL_IHL();
-void SRL_A();
-
-void BIT_0_B();
-void BIT_0_C();
-void BIT_0_D();
-void BIT_0_E();
-void BIT_0_H();
-void BIT_0_L();
-void BIT_0_IHL();
-void BIT_0_A();
-void BIT_1_B();
-void BIT_1_C();
-void BIT_1_D();
-void BIT_1_E();
-void BIT_1_H();
-void BIT_1_L();
-void BIT_1_IHL();
-void BIT_1_A();
-void BIT_2_B();
-void BIT_2_C();
-void BIT_2_D();
-void BIT_2_E();
-void BIT_2_H();
-void BIT_2_L();
-void BIT_2_IHL();
-void BIT_2_A();
-void BIT_3_B();
-void BIT_3_C();
-void BIT_3_D();
-void BIT_3_E();
-void BIT_3_H();
-void BIT_3_L();
-void BIT_3_IHL();
-void BIT_3_A();
-void BIT_4_B();
-void BIT_4_C();
-void BIT_4_D();
-void BIT_4_E();
-void BIT_4_H();
-void BIT_4_L();
-void BIT_4_IHL();
-void BIT_4_A();
-void BIT_4_B();
-void BIT_5_C();
-void BIT_5_D();
-void BIT_5_E();
-void BIT_5_H();
-void BIT_5_L();
-void BIT_5_IHL();
-void BIT_5_A();
-void BIT_6_B();
-void BIT_6_C();
-void BIT_6_D();
-void BIT_6_E();
-void BIT_6_H();
-void BIT_6_L();
-void BIT_6_IHL();
-void BIT_6_A();
-void BIT_6_B();
-void BIT_7_C();
-void BIT_7_D();
-void BIT_7_E();
-void BIT_7_H();
-void BIT_7_L();
-void BIT_7_IHL();
-void BIT_7_A();
-
-void RES_0_B();
-void RES_0_C();
-void RES_0_D();
-void RES_0_E();
-void RES_0_H();
-void RES_0_L();
-void RES_0_IHL();
-void RES_0_A();
-void RES_1_B();
-void RES_1_C();
-void RES_1_D();
-void RES_1_E();
-void RES_1_H();
-void RES_1_L();
-void RES_1_IHL();
-void RES_1_A();
-void RES_2_B();
-void RES_2_C();
-void RES_2_D();
-void RES_2_E();
-void RES_2_H();
-void RES_2_L();
-void RES_2_IHL();
-void RES_2_A();
-void RES_3_B();
-void RES_3_C();
-void RES_3_D();
-void RES_3_E();
-void RES_3_H();
-void RES_3_L();
-void RES_3_IHL();
-void RES_3_A();
-void RES_4_B();
-void RES_4_C();
-void RES_4_D();
-void RES_4_E();
-void RES_4_H();
-void RES_4_L();
-void RES_4_IHL();
-void RES_4_A();
-void RES_4_B();
-void RES_5_C();
-void RES_5_D();
-void RES_5_E();
-void RES_5_H();
-void RES_5_L();
-void RES_5_IHL();
-void RES_5_A();
-void RES_6_B();
-void RES_6_C();
-void RES_6_D();
-void RES_6_E();
-void RES_6_H();
-void RES_6_L();
-void RES_6_IHL();
-void RES_6_A();
-void RES_6_B();
-void RES_7_C();
-void RES_7_D();
-void RES_7_E();
-void RES_7_H();
-void RES_7_L();
-void RES_7_IHL();
-void RES_7_A();
-
-void SET_0_B();
-void SET_0_C();
-void SET_0_D();
-void SET_0_E();
-void SET_0_H();
-void SET_0_L();
-void SET_0_IHL();
-void SET_0_A();
-void SET_1_B();
-void SET_1_C();
-void SET_1_D();
-void SET_1_E();
-void SET_1_H();
-void SET_1_L();
-void SET_1_IHL();
-void SET_1_A();
-void SET_2_B();
-void SET_2_C();
-void SET_2_D();
-void SET_2_E();
-void SET_2_H();
-void SET_2_L();
-void SET_2_IHL();
-void SET_2_A();
-void SET_3_B();
-void SET_3_C();
-void SET_3_D();
-void SET_3_E();
-void SET_3_H();
-void SET_3_L();
-void SET_3_IHL();
-void SET_3_A();
-void SET_4_B();
-void SET_4_C();
-void SET_4_D();
-void SET_4_E();
-void SET_4_H();
-void SET_4_L();
-void SET_4_IHL();
-void SET_4_A();
-void SET_4_B();
-void SET_5_C();
-void SET_5_D();
-void SET_5_E();
-void SET_5_H();
-void SET_5_L();
-void SET_5_IHL();
-void SET_5_A();
-void SET_6_B();
-void SET_6_C();
-void SET_6_D();
-void SET_6_E();
-void SET_6_H();
-void SET_6_L();
-void SET_6_IHL();
-void SET_6_A();
-void SET_6_B();
-void SET_7_C();
-void SET_7_D();
-void SET_7_E();
-void SET_7_H();
-void SET_7_L();
-void SET_7_IHL();
-void SET_7_A();
+DECLARE_OP_REGS(SET_0)
+DECLARE_OP_REGS(SET_1)
+DECLARE_OP_REGS(SET_2)
+DECLARE_OP_REGS(SET_3)
+DECLARE_OP_REGS(SET_4)
+DECLARE_OP_REGS(SET_5)
+DECLARE_OP_REGS(SET_6)
+DECLARE_OP_REGS(SET_7)
 
 #endif /* BIT8_H_ */

@@ -8,35 +8,40 @@
 #ifndef CONTROL_H_
 #define CONTROL_H_
 
-void JR_r8();
-void JR_NZ_r8();
-void JR_Z_r8();
-void JR_NC_r8();
-void JR_C_r8();
-void RET_NZ();
-void JP_NZ_a16();
-void JP_a16();
-void CALL_NZ_a16();
-void RST_00H();
-void RET_Z();
-void RET();
-void JP_Z_a16();
-void CALL_Z_a16();
-void CALL_a16();
-void RST_08H();
-void RET_NC();
-void JP_NC_a16();
-void CALL_NC_a16();
-void RST_10H();
-void RET_C();
-void RETI();
-void JP_C_a16();
-void CALL_C_a16();
-void RST_18H();
-void RST_20H();
-void JP_HL();
-void RST_28H();
-void RST_30H();
-void RST_38H();
+#include "../common.h"
+#include "../gem.h"
+
+#define DECLARE_OP_COND(OP, COND) void OP ## _ ## COND (struct machine_t *gem);
+
+DECLARE_OP_COND(JR, r8);
+DECLARE_OP_COND(JR_NZ, r8);
+DECLARE_OP_COND(JR_Z, r8);
+DECLARE_OP_COND(JR_NC, r8);
+DECLARE_OP_COND(JR_C, r8);
+DECLARE_OP_COND(RET, NZ);
+DECLARE_OP_COND(JP_NZ, a16);
+DECLARE_OP_COND(JP, a16);
+DECLARE_OP_COND(CALL_NZ, a16);
+DECLARE_OP_COND(RST, 00H);
+DECLARE_OP_COND(RET, Z);
+void RET(struct machine_t *gem);
+DECLARE_OP_COND(JP_Z, a16);
+DECLARE_OP_COND(CALL_Z, a16);
+DECLARE_OP_COND(CALL, a16);
+DECLARE_OP_COND(RST, 08H);
+DECLARE_OP_COND(RET, NC);
+DECLARE_OP_COND(JP_NC, a16);
+DECLARE_OP_COND(CALL_NC, a16);
+DECLARE_OP_COND(RST, 10H);
+DECLARE_OP_COND(RET, C);
+void RETI(struct machine_t *gem);
+DECLARE_OP_COND(JP_C, a16);
+DECLARE_OP_COND(CALL_C, a16);
+DECLARE_OP_COND(RST, 18H);
+DECLARE_OP_COND(RST, 20H);
+DECLARE_OP_COND(JP, HL);
+DECLARE_OP_COND(RST, 28H);
+DECLARE_OP_COND(RST, 30H);
+DECLARE_OP_COND(RST, 38H);
 
 #endif /* CONTROL_H_ */

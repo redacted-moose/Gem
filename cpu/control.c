@@ -10,354 +10,106 @@
 #include "../mmu.h"
 #include "control.h"
 
-void JR_r8()
-{
-	cpu.pc += (s_byte)read_byte(cpu.pc);
-	cpu.pc++;
-	cpu.t += 12;
-	cpu.last_t = 12;
+
+#define JR_COND_R8(COND, cond)                   \
+    void JR ## COND ## _r8 (struct machine_t *gem) {    \
+        struct cpu_t *cpu = gem->cpu;                   \
+        if (cond) {                                     \
+            cpu->pc += (s_byte)read_byte(gem, cpu->pc); \
+        } else {                                        \
+            cpu->use_timing2 = true;                    \
+        }                                               \
+        cpu->pc++;                                      \
+    }
+
+JR_COND_R8(, true)
+JR_COND_R8(_NZ, !cpu->z)
+JR_COND_R8(_Z, cpu->z)
+JR_COND_R8(_NC, !cpu->ca)
+JR_COND_R8(_C, cpu->ca)
+
+
+#define RET_COND(COND, cond)                        \
+    void RET ## COND (struct machine_t *gem) {             \
+        struct cpu_t *cpu = gem->cpu;                      \
+        if (cond) {                                        \
+            cpu->pc = read_word(gem, cpu->sp);             \
+            cpu->sp += 2;                                  \
+        } else {                                           \
+            cpu->use_timing2 = true;                       \
+        }                                                  \
+    }
+
+RET_COND(, true)
+RET_COND(_NZ, !cpu->z)
+RET_COND(_Z, cpu->z)
+RET_COND(_NC, !cpu->ca)
+RET_COND(_C, cpu->ca)
+
+void RETI(struct machine_t *gem) {
+    struct cpu_t *cpu = gem->cpu;
+	cpu->pc = read_word(gem, cpu->sp);
+    cpu->sp += 2;
+	cpu->ime = true;
 }
 
-void JR_NZ_r8()
-{
-	if(!cpu.z) {
-		cpu.pc += (s_byte)read_byte(cpu.pc);
-		cpu.pc++;
-		cpu.t += 12;
-		cpu.last_t = 12;
-		return;
-	} else {
-		cpu.pc++;
-		cpu.t += 8;
-		cpu.last_t = 8;
-	}
+
+#define JP_COND_A16(COND, cond)                  \
+    void JP ## COND ## _a16 (struct machine_t *gem) {   \
+        struct cpu_t *cpu = gem->cpu;                   \
+        if (cond) {                                     \
+            cpu->pc = read_word(gem, cpu->pc);          \
+        } else {                                        \
+            cpu->pc += 2;                               \
+            cpu->use_timing2 = true;                    \
+        }                                               \
+    }
+
+JP_COND_A16(, true)
+JP_COND_A16(_NZ, !cpu->z)
+JP_COND_A16(_Z, cpu->z)
+JP_COND_A16(_NC, !cpu->ca)
+JP_COND_A16(_C, cpu->ca)
+
+void JP_HL(struct machine_t *gem) {
+    struct cpu_t *cpu = gem->cpu;
+    cpu->pc = cpu->hl;
 }
 
-void JR_Z_r8()
-{
-	if(cpu.z) {
-		cpu.pc += (s_byte)read_byte(cpu.pc);
-		cpu.pc++;
-		cpu.t += 12;
-		cpu.last_t = 12;
-		return;
-	} else {
-		cpu.pc++;
-		cpu.t += 8;
-		cpu.last_t = 8;
-	}
-}
 
-void JR_NC_r8()
-{
-	if(!cpu.ca) {
-		cpu.pc += (s_byte)read_byte(cpu.pc);
-		cpu.pc++;
-		cpu.t += 12;
-		cpu.last_t = 12;
-		return;
-	} else {
-		cpu.pc++;
-		cpu.t += 8;
-		cpu.last_t = 8;
-	}
-}
+#define CALL_COND_A16(COND, cond)                     \
+    void CALL ## COND ## _a16 (struct machine_t *gem) {      \
+        struct cpu_t *cpu = gem->cpu;                        \
+        if (cond) {                                          \
+            cpu->sp -= 2;                                    \
+            write_word(gem, cpu->sp, cpu->pc + 2);           \
+            cpu->pc = read_word(gem, cpu->pc);               \
+        } else {                                             \
+            cpu->pc += 2;                                    \
+            cpu->use_timing2 = true;                         \
+        }                                                    \
+    }
 
-void JR_C_r8()
-{
-	if(cpu.ca) {
-		cpu.pc += (s_byte)read_byte(cpu.pc);
-		cpu.pc++;
-		cpu.t += 12;
-		cpu.last_t = 12;
-		return;
-	} else {
-		cpu.pc++;
-		cpu.t += 8;
-		cpu.last_t = 8;
-	}
-}
+CALL_COND_A16(, true)
+CALL_COND_A16(_NZ, !cpu->z)
+CALL_COND_A16(_Z, cpu->z)
+CALL_COND_A16(_NC, !cpu->ca)
+CALL_COND_A16(_C, cpu->ca)
 
-void RET_NZ()
-{
-	if(!cpu.z) {
-		cpu.pc = read_word(cpu.sp);
-		cpu.sp += 2;
-		cpu.t += 20;
-		cpu.last_t = 20;
-	} else {
-		cpu.pc += 2;
-		cpu.t += 8;
-		cpu.last_t = 8;
-	}
-}
 
-void JP_NZ_a16()
-{
-	if(!cpu.z) {
-		cpu.pc = read_word(cpu.pc);
-		cpu.t += 16;
-		cpu.last_t = 16;
-		return;
-	} else {
-		cpu.pc += 2;
-		cpu.t += 12;
-		cpu.last_t = 12;
-	}
-}
+#define RST_A16(A16, a16)                \
+    void RST ## A16 (struct machine_t *gem) {   \
+        struct cpu_t *cpu = gem->cpu;           \
+        cpu->sp -= 2;                           \
+        write_word(gem, cpu->sp, cpu->pc);      \
+        cpu->pc = a16;                          \
+    }
 
-void JP_a16()
-{
-	cpu.pc = read_word(cpu.pc);
-	cpu.t += 16;
-	cpu.last_t = 16;
-}
-
-void CALL_NZ_a16()
-{
-	if(!cpu.z) {
-		cpu.sp -= 2;
-		write_word(cpu.sp, cpu.pc + 2);
-		cpu.pc = read_word(cpu.pc);
-		cpu.t += 24;
-		cpu.last_t = 24;
-	} else {
-		cpu.pc += 2;
-		cpu.t += 12;
-		cpu.last_t = 12;
-	}
-}
-
-void RST_00H()
-{
-	cpu.sp -= 2;
-	write_word(cpu.sp, cpu.pc);
-	cpu.pc = 0x0000;
-	cpu.t += 16;
-	cpu.last_t = 16;
-}
-
-void RET_Z()
-{
-	if(cpu.z) {
-		cpu.pc = read_word(cpu.sp);
-		cpu.sp += 2;
-		cpu.t += 20;
-		cpu.last_t = 20;
-	} else {
-		cpu.pc += 2;
-		cpu.t += 8;
-		cpu.last_t = 8;
-	}
-}
-
-void RET()
-{
-	cpu.pc = read_word(cpu.sp);
-	cpu.sp += 2;
-	cpu.t += 16;
-	cpu.last_t = 16;
-}
-
-void JP_Z_a16()
-{
-	if(cpu.z) {
-		cpu.pc = read_word(cpu.pc);
-		cpu.t += 16;
-		cpu.last_t = 16;
-		return;
-	} else {
-		cpu.pc += 2;
-		cpu.t += 12;
-		cpu.last_t = 12;
-	}
-}
-
-void CALL_Z_a16()
-{
-	if(cpu.z) {
-		cpu.sp -= 2;
-		write_word(cpu.sp, cpu.pc + 2);
-		cpu.pc = read_word(cpu.pc);
-		cpu.t += 24;
-		cpu.last_t = 24;
-	} else {
-		cpu.pc += 2;
-		cpu.t += 12;
-		cpu.last_t = 12;
-	}
-}
-
-void CALL_a16()
-{
-	cpu.sp -= 2;
-	write_word(cpu.sp, cpu.pc + 2);
-	cpu.pc = read_word(cpu.pc);
-	cpu.t += 24;
-	cpu.last_t = 24;
-}
-
-void RST_08H()
-{
-	cpu.sp -= 2;
-	write_word(cpu.sp, cpu.pc);
-	cpu.pc = 0x0008;
-	cpu.t += 16;
-	cpu.last_t = 16;
-}
-
-void RET_NC()
-{
-	if(!cpu.ca) {
-		cpu.pc = read_word(cpu.sp);
-		cpu.sp += 2;
-		cpu.t += 20;
-		cpu.last_t = 20;
-	} else {
-		cpu.pc += 2;
-		cpu.t += 8;
-		cpu.last_t = 8;
-	}
-}
-
-void JP_NC_a16()
-{
-	if(!cpu.ca) {
-		cpu.pc = read_word(cpu.pc);
-		cpu.t += 16;
-		cpu.last_t = 16;
-		return;
-	} else {
-		cpu.pc += 2;
-		cpu.t += 12;
-		cpu.last_t = 12;
-	}
-}
-
-void CALL_NC_a16()
-{
-	if(!cpu.c) {
-		cpu.sp -= 2;
-		write_word(cpu.sp, cpu.pc + 2);
-		cpu.pc = read_word(cpu.pc);
-		cpu.t += 24;
-		cpu.last_t = 24;
-	} else {
-		cpu.pc += 2;
-		cpu.t += 12;
-		cpu.last_t = 12;
-	}
-}
-
-void RST_10H()
-{
-	cpu.sp -= 2;
-	write_word(cpu.sp, cpu.pc);
-	cpu.pc = 0x0010;
-	cpu.t += 16;
-	cpu.last_t = 16;
-}
-
-void RET_C()
-{
-	if(cpu.ca) {
-		cpu.pc = read_word(cpu.sp);
-		cpu.sp += 2;
-		cpu.t += 20;
-		cpu.last_t = 20;
-	} else {
-		cpu.pc += 2;
-		cpu.t += 8;
-		cpu.last_t = 8;
-	}
-}
-
-void RETI()
-{
-	cpu.pc = read_word(cpu.sp);
-	cpu.sp += 2;
-	cpu.ime = true;
-	cpu.t += 16;
-	cpu.last_t = 16;
-}
-
-void JP_C_a16()
-{
-	if(cpu.ca) {
-		cpu.pc = read_word(cpu.pc);
-		cpu.t += 16;
-		cpu.last_t = 16;
-		return;
-	} else {
-		cpu.pc += 2;
-		cpu.t += 12;
-		cpu.last_t = 12;
-	}
-}
-
-void CALL_C_a16()
-{
-	if(cpu.ca) {
-		cpu.sp -= 2;
-		write_word(cpu.sp, cpu.pc + 2);
-		cpu.pc = read_word(cpu.pc);
-		cpu.t += 24;
-		cpu.last_t = 24;
-	} else {
-		cpu.pc += 2;
-		cpu.t += 12;
-		cpu.last_t = 12;
-	}
-}
-
-void RST_18H()
-{
-	cpu.sp -= 2;
-	write_word(cpu.sp, cpu.pc);
-	cpu.pc = 0x0018;
-	cpu.t += 16;
-	cpu.last_t = 16;
-}
-
-void RST_20H()
-{
-	cpu.sp -= 2;
-	write_word(cpu.sp, cpu.pc);
-	cpu.pc = 0x0020;
-	cpu.t += 16;
-	cpu.last_t = 16;
-}
-
-void JP_HL()
-{
-	cpu.pc = read_word(cpu.hl);
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void RST_28H()
-{
-	cpu.sp -= 2;
-	write_word(cpu.sp, cpu.pc);
-	cpu.pc = 0x0028;
-	cpu.t += 16;
-	cpu.last_t = 16;
-}
-
-void RST_30H()
-{
-	cpu.sp -= 2;
-	write_word(cpu.sp, cpu.pc);
-	cpu.pc = 0x0030;
-	cpu.t += 16;
-	cpu.last_t = 16;
-}
-
-void RST_38H()
-{
-	cpu.sp -= 2;
-	write_word(cpu.sp, cpu.pc);
-	cpu.pc = 0x0038;
-	cpu.t += 16;
-	cpu.last_t = 16;
-}
+RST_A16(_00H, 0x0000)
+RST_A16(_08H, 0x0008)
+RST_A16(_10H, 0x0010)
+RST_A16(_18H, 0x0018)
+RST_A16(_20H, 0x0020)
+RST_A16(_28H, 0x0028)
+RST_A16(_30H, 0x0030)
+RST_A16(_38H, 0x0038)

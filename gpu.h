@@ -8,7 +8,9 @@
 #ifndef GPU_H_
 #define GPU_H_
 
-#include "gem.h"
+#include <SDL/SDL.h>
+
+#include "common.h"
 
 // Memory locations
 #define VRAM_TILE_DATA_TABLE_1      0x8000
@@ -78,7 +80,7 @@ typedef union palette_t {
 	byte palette;
 } palette;
 
-typedef struct gpu_t {
+struct gpu_t {
 	union {
 		byte vram[0x2000]; // 8 KB of VRAM
 		struct {
@@ -131,13 +133,13 @@ typedef struct gpu_t {
 	palette object_0;
 	palette object_1;
 
-} GPUSTATE;
+    SDL_Surface *screen;
+};
 
-extern GPUSTATE gpu;
-
-void reset_gpu();
-void step_gpu();
-byte read_byte_gpu(word);
-void write_byte_gpu(word, byte);
+struct gpu_t *reset_gpu();
+void destroy_gpu(struct gpu_t *);
+void step_gpu(struct machine_t *);
+byte read_byte_gpu(struct gpu_t *, word);
+void write_byte_gpu(struct gpu_t *, word, byte);
 
 #endif /* GPU_H_ */

@@ -5,127 +5,61 @@
  *      Author: sadlercr
  */
 
-#include "../gem.h"
+#include "../common.h"
 #include "../cpu.h"
 #include "../mmu.h"
 #include "lsm16.h"
 
+#define LD_R16_D16(REG16, reg16)                        \
+    void LD_ ## REG16 ## _d16 (struct machine_t *gem) { \
+        struct cpu_t *cpu = gem->cpu;                   \
+        cpu->reg16 = read_word(gem, cpu->pc);           \
+        cpu->pc += 2;                                   \
+    }
 
-void LD_BC_d16()
-{
-	cpu.bc = read_word(cpu.pc);
-	cpu.pc += 2;
-	cpu.t += 12;
-	cpu.last_t = 12;
+LD_R16_D16(BC, bc)
+LD_R16_D16(DE, de)
+LD_R16_D16(HL, hl)
+LD_R16_D16(SP, sp)
+
+
+#define POP_R16(REG16, reg16)                       \
+    void POP_ ## REG16 (struct machine_t *gem) {    \
+        struct cpu_t *cpu = gem->cpu;               \
+        cpu->bc = read_word(gem, cpu->sp);          \
+        cpu->sp += 2;                               \
+    }
+
+POP_R16(BC, bc)
+POP_R16(DE, de)
+POP_R16(HL, hl)
+POP_R16(AF, af)
+
+
+#define PUSH_R16(REG16, reg16)                      \
+    void PUSH_ ## REG16 (struct machine_t *gem) {   \
+        struct cpu_t *cpu = gem->cpu;               \
+        cpu->sp -= 2;                               \
+        write_word(gem, cpu->sp, cpu->bc);          \
+    }
+
+PUSH_R16(BC, bc)
+PUSH_R16(DE, de)
+PUSH_R16(HL, hl)
+PUSH_R16(AF, af)
+
+
+void LD_a16_SP(struct machine_t *gem) {
+    struct cpu_t *cpu = gem->cpu;
+	write_word(gem, read_word(gem, cpu->pc), cpu->sp);
 }
 
-void LD_a16_SP()
-{
-	write_word(read_word(cpu.pc), cpu.sp);
-	cpu.pc++;
-	cpu.t += 20;
-	cpu.last_t = 20;
+void LD_HL_SP_r8(struct machine_t *gem) {
+    struct cpu_t *cpu = gem->cpu;
+	cpu->hl = read_word(gem, cpu->sp + (s_byte)read_byte(gem, cpu->pc));
 }
 
-void LD_DE_d16()
-{
-	cpu.de = read_word(cpu.pc);
-	cpu.pc += 2;
-	cpu.t += 12;
-	cpu.last_t = 12;
-}
-
-void LD_HL_d16()
-{
-	cpu.hl = read_word(cpu.pc);
-	cpu.pc += 2;
-	cpu.t += 12;
-	cpu.last_t = 12;
-}
-
-void LD_SP_d16()
-{
-	cpu.sp = read_word(cpu.pc);
-	cpu.pc += 2;
-	cpu.t += 12;
-	cpu.last_t = 12;
-}
-
-void POP_BC()
-{
-	cpu.bc = read_word(cpu.sp);
-	cpu.sp += 2;
-	cpu.t += 12;
-	cpu.last_t = 12;
-}
-
-void PUSH_BC()
-{
-	cpu.sp -= 2;
-	write_word(cpu.sp, cpu.bc);
-	cpu.t += 16;
-	cpu.last_t = 16;
-}
-
-void POP_DE()
-{
-	cpu.de = read_word(cpu.sp);
-	cpu.sp += 2;
-	cpu.t += 12;
-	cpu.last_t = 12;
-}
-
-void PUSH_DE()
-{
-	cpu.sp -= 2;
-	write_word(cpu.sp, cpu.de);
-	cpu.t += 16;
-	cpu.last_t = 16;
-}
-
-void POP_HL()
-{
-	cpu.hl = read_word(cpu.sp);
-	cpu.sp += 2;
-	cpu.t += 12;
-	cpu.last_t = 12;
-}
-
-void PUSH_HL()
-{
-	cpu.sp -= 2;
-	write_word(cpu.sp, cpu.hl);
-	cpu.t += 16;
-	cpu.last_t = 16;
-}
-
-void POP_AF()
-{
-	cpu.af = read_word(cpu.sp);
-	cpu.sp += 2;
-	cpu.t += 12;
-	cpu.last_t = 12;
-}
-
-void PUSH_AF()
-{
-	cpu.sp -= 2;
-	write_word(cpu.sp, cpu.af);
-	cpu.t += 16;
-	cpu.last_t = 16;
-}
-
-void LD_HL_SP_r8()
-{
-	cpu.hl = read_word(cpu.sp + (s_byte)read_byte(cpu.pc));
-	cpu.pc++;
-	cpu.t += 12;
-	cpu.last_t = 12;
-}
-
-void LD_SP_HL()
-{
-	cpu.sp = cpu.hl;
-	cpu.t += 8;
-	cpu.last_t = 8;
+void LD_SP_HL(struct machine_t *gem) {
+    struct cpu_t *cpu = gem->cpu;
+	cpu->sp = cpu->hl;
 }

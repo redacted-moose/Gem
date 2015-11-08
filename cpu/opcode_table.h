@@ -10,7 +10,7 @@
 
 #include "../cpu.h"
 
-extern opcode opcode_table[];
-extern opcode cb_prefix_table[];
+extern const struct instruction_t opcode_table[];
+extern const struct instruction_t cb_prefix_table[];
 
 #endif /* OPCODE_TABLE_H_ */

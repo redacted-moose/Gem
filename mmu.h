@@ -10,9 +10,9 @@
 
 //#include <os.h>
 #include <stdbool.h>
-#include "gem.h"
+#include "common.h"
 
-typedef enum t_cartridge {
+typedef enum cartridge_t {
     ROM_ONLY = 0,
     MBC1 = 1,
     MBC1_RAM = 2,
@@ -41,13 +41,13 @@ typedef enum t_cartridge {
     HUDSON_HUC_1 = 0xFF
 } CARTRIDGE;
 
-typedef struct mmu_t {
+struct mmu_t {
 
 	// Is bios mapped?
 	bool in_bios;
 
 	// Memory regions
-	byte bios[0x100]; // 256 byte Bios
+	const byte *bios;// 256 byte Bios
 	byte wram[0x2000]; // 8 KB of Working ram
 	byte *eram; // External ram - variable
 	byte zram[0x7F]; // 127 bytes of Zero-page ram
@@ -84,16 +84,17 @@ typedef struct mmu_t {
     byte dma;
     byte dma_offset;
 
-} MMUSTATE;
+};
 
-extern MMUSTATE mmu;
+extern const byte bios_array[0x100];
 
-void reset_mmu();
-byte read_byte(word);
-word read_word(word);
-void write_byte(word, byte);
-void write_word(word, word);
-void load_rom(const char *);
-void do_dma();
+struct mmu_t *reset_mmu();
+void destroy_mmu(struct mmu_t *);
+byte read_byte(struct machine_t *, word);
+word read_word(struct machine_t *, word);
+void write_byte(struct machine_t *,word, byte);
+void write_word(struct machine_t *, word, word);
+void load_rom(struct mmu_t *, const char *);
+void do_dma(struct machine_t *);
 
 #endif /* MMU_H_ */

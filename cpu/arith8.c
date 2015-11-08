@@ -9,1072 +9,326 @@
 #include "../mmu.h"
 #include "arith8.h"
 
-void INC_B()
-{
-	cpu.hc = (~(cpu.b & 0x0F)) ? 0 : 1; // Carry only if lower nibble is all 1's
-	cpu.b++;
-	cpu.z = (cpu.b) ? 0 : 1;
-	cpu.n = 1;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
 
-void DEC_B()
-{
-	cpu.hc = (cpu.b & 0x0F) ? 1 : 0; // Borrow only occurs if the lower nibble is 0
-	cpu.b--;
-	cpu.z = (cpu.b) ? 0 : 1;
-	cpu.n = 1;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
+#define INC_R8(REG8, reg8)                          \
+    void INC_ ## REG8 (struct machine_t *gem) {     \
+        struct cpu_t *cpu = gem->cpu;               \
+        cpu->reg8++;                                \
+        cpu->hc = (cpu->reg8 & 0x0F) ? 0 : 1;       \
+        cpu->z = (cpu->reg8) ? 0 : 1;               \
+        cpu->n = 0;                                 \
+    }
 
-void INC_C()
-{
-	cpu.hc = (~(cpu.c & 0x0F)) ? 0 : 1; // Carry only if lower nibble is all 1's
-	cpu.c++;
-	cpu.z = (cpu.c) ? 0 : 1;
-	cpu.n = 1;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
+INC_R8(B, b)
+INC_R8(C, c)
+INC_R8(D, d)
+INC_R8(E, e)
+INC_R8(H, h)
+INC_R8(L, l)
+INC_R8(IHL, ihl)
+INC_R8(A, a)
 
-void DEC_C()
-{
-	cpu.hc = (cpu.c & 0x0F) ? 1 : 0; // Borrow only occurs if the lower nibble is 0
-	cpu.c--;
-	cpu.z = (cpu.c) ? 0 : 1;
-	cpu.n = 1;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
 
-void INC_D()
-{
-	cpu.hc = (~(cpu.d & 0x0F)) ? 0 : 1; // Carry only if lower nibble is all 1's
-	cpu.d++;
-	cpu.z = (cpu.d) ? 0 : 1;
-	cpu.n = 1;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
+#define DEC_R8(REG8, reg8)                          \
+    void DEC_ ## REG8 (struct machine_t *gem) {     \
+        struct cpu_t *cpu = gem->cpu;               \
+        cpu->reg8--;                                \
+        cpu->hc = (~(cpu->reg8 & 0x0F)) ? 1 : 0;    \
+        cpu->z = (cpu->reg8) ? 0 : 1;               \
+        cpu->n = 1;                                 \
+    }
 
-void DEC_D()
-{
-	cpu.hc = (cpu.d & 0x0F) ? 1 : 0; // Borrow only occurs if the lower nibble is 0
-	cpu.d--;
-	cpu.z = (cpu.d) ? 0 : 1;
-	cpu.n = 1;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
+DEC_R8(B, b)
+DEC_R8(C, c)
+DEC_R8(D, d)
+DEC_R8(E, e)
+DEC_R8(H, h)
+DEC_R8(L, l)
+DEC_R8(IHL, ihl)
+DEC_R8(A, a)
 
-void INC_E()
-{
-	cpu.hc = (~(cpu.e & 0x0F)) ? 0 : 1; // Carry only if lower nibble is all 1's
-	cpu.e++;
-	cpu.z = (cpu.e) ? 0 : 1;
-	cpu.n = 1;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
+void DAA(struct machine_t *gem) {
+    struct cpu_t *cpu = gem->cpu;
 
-void DEC_E()
-{
-	cpu.hc = (cpu.e & 0x0F) ? 1 : 0; // Borrow only occurs if the lower nibble is 0
-	cpu.e--;
-	cpu.z = (cpu.e) ? 0 : 1;
-	cpu.n = 1;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void INC_H()
-{
-	cpu.hc = (~(cpu.h & 0x0F)) ? 0 : 1; // Carry only if lower nibble is all 1's
-	cpu.h++;
-	cpu.z = (cpu.h) ? 0 : 1;
-	cpu.n = 1;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void DEC_H()
-{
-	cpu.hc = (cpu.h & 0x0F) ? 1 : 0; // Borrow only occurs if the lower nibble is 0
-	cpu.h--;
-	cpu.z = (cpu.h) ? 0 : 1;
-	cpu.n = 1;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void DAA()
-{
 	// TODO: implement DAA
 }
 
-void INC_L()
-{
-	cpu.hc = (~(cpu.l & 0x0F)) ? 0 : 1; // Carry only if lower nibble is all 1's
-	cpu.l++;
-	cpu.z = (cpu.l) ? 0 : 1;
-	cpu.n = 1;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void DEC_L()
-{
-	cpu.hc = (cpu.l & 0x0F) ? 1 : 0; // Borrow only occurs if the lower nibble is 0
-	cpu.l--;
-	cpu.z = (cpu.l) ? 0 : 1;
-	cpu.n = 1;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void CPL()
-{
-	cpu.a = ~cpu.a;
-	cpu.n = 1;
-	cpu.hc = 1;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void INC_IHL()
-{
-	byte ihl = read_byte(cpu.hl);
-	cpu.hc = (~(ihl & 0x0F)) ? 0 : 1; // Carry only if lower nibble is all 1's
-	ihl++;
-	cpu.z = (ihl) ? 0 : 1;
-	cpu.n = 1;
-	write_byte(cpu.hl, ihl);
-	cpu.t += 12;
-	cpu.last_t = 12;
-}
-
-void DEC_IHL()
-{
-	byte ihl = read_byte(cpu.hl);
-	cpu.hc = (ihl & 0x0F) ? 1 : 0; // Borrow only occurs if the lower nibble is 0
-	ihl--;
-	cpu.z = (ihl) ? 0 : 1;
-	cpu.n = 1;
-	write_byte(cpu.hl, ihl);
-	cpu.t += 12;
-	cpu.last_t = 12;
-}
-
-void SCF()
-{
-	cpu.ca = 1;
-	cpu.n = 0;
-	cpu.hc = 0;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void INC_A()
-{
-	cpu.hc = (~(cpu.a & 0x0F)) ? 0 : 1; // Carry only if lower nibble is all 1's
-	cpu.a++;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.n = 1;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void DEC_A()
-{
-	cpu.hc = (cpu.a & 0x0F) ? 1 : 0; // Borrow only occurs if the lower nibble is 0
-	cpu.a--;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.n = 1;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void CCF()
-{
-	cpu.n = 0;
-	cpu.hc = 0;
-	cpu.ca = ~cpu.ca;
-}
-
-void ADD_A_B()
-{
-	byte bef_byte = cpu.a;
-	byte bef = cpu.a & 0x0F;
-	cpu.a += cpu.b;
-	cpu.hc = ((cpu.a & 0x0F) < bef) ? 1 : 0;
-	cpu.ca = (cpu.a < bef_byte) ? 1 : 0; // Overflow occurred, so set carry bit
-	cpu.n = 0;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void ADD_A_C()
-{
-	byte bef_byte = cpu.a;
-	byte bef = cpu.a & 0x0F;
-	cpu.a += cpu.c;
-	cpu.hc = ((cpu.a & 0x0F) < bef) ? 1 : 0;
-	cpu.ca = (cpu.a < bef_byte) ? 1 : 0; // Overflow occurred, so set carry bit
-	cpu.n = 0;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void ADD_A_D()
-{
-	byte bef_byte = cpu.a;
-	byte bef = cpu.a & 0x0F;
-	cpu.a += cpu.d;
-	cpu.hc = ((cpu.a & 0x0F) < bef) ? 1 : 0;
-	cpu.ca = (cpu.a < bef_byte) ? 1 : 0; // Overflow occurred, so set carry bit
-	cpu.n = 0;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void ADD_A_E()
-{
-	byte bef_byte = cpu.a;
-	byte bef = cpu.a & 0x0F;
-	cpu.a += cpu.e;
-	cpu.hc = ((cpu.a & 0x0F) < bef) ? 1 : 0;
-	cpu.ca = (cpu.a < bef_byte) ? 1 : 0; // Overflow occurred, so set carry bit
-	cpu.n = 0;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void ADD_A_H()
-{
-	byte bef_byte = cpu.a;
-	byte bef = cpu.a & 0x0F;
-	cpu.a += cpu.h;
-	cpu.hc = ((cpu.a & 0x0F) < bef) ? 1 : 0;
-	cpu.ca = (cpu.a < bef_byte) ? 1 : 0; // Overflow occurred, so set carry bit
-	cpu.n = 0;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void ADD_A_L()
-{
-	byte bef_byte = cpu.a;
-	byte bef = cpu.a & 0x0F;
-	cpu.a += cpu.l;
-	cpu.hc = ((cpu.a & 0x0F) < bef) ? 1 : 0;
-	cpu.ca = (cpu.a < bef_byte) ? 1 : 0; // Overflow occurred, so set carry bit
-	cpu.n = 0;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void ADD_A_IHL()
-{
-	byte ihl = read_byte(cpu.hl);
-	byte bef_byte = cpu.a;
-	byte bef = cpu.a & 0x0F;
-	cpu.a += ihl;
-	cpu.hc = ((cpu.a & 0x0F) < bef) ? 1 : 0;
-	cpu.ca = (cpu.a < bef_byte) ? 1 : 0; // Overflow occurred, so set carry bit
-	cpu.n = 0;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.t += 8;
-	cpu.last_t = 8;
-}
-
-void ADD_A_A()
-{
-	byte bef_byte = cpu.a;
-	byte bef = cpu.a & 0x0F;
-	cpu.a += cpu.a;
-	cpu.hc = ((cpu.a & 0x0F) < bef) ? 1 : 0;
-	cpu.ca = (cpu.a < bef_byte) ? 1 : 0; // Overflow occurred, so set carry bit
-	cpu.n = 0;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void ADC_A_B()
-{
-	byte bef_byte = cpu.a;
-	byte bef = cpu.a & 0x0F;
-	cpu.a += cpu.b + cpu.ca;
-	cpu.hc = ((cpu.a & 0x0F) < bef) ? 1 : 0;
-	cpu.ca = (cpu.a < bef_byte) ? 1 : 0; // Overflow occurred, so set carry bit
-	cpu.n = 0;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void ADC_A_C()
-{
-	byte bef_byte = cpu.a;
-	byte bef = cpu.a & 0x0F;
-	cpu.a += cpu.c + cpu.ca;
-	cpu.hc = ((cpu.a & 0x0F) < bef) ? 1 : 0;
-	cpu.ca = (cpu.a < bef_byte) ? 1 : 0; // Overflow occurred, so set carry bit
-	cpu.n = 0;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void ADC_A_D()
-{
-	byte bef_byte = cpu.a;
-	byte bef = cpu.a & 0x0F;
-	cpu.a += cpu.d + cpu.ca;
-	cpu.hc = ((cpu.a & 0x0F) < bef) ? 1 : 0;
-	cpu.ca = (cpu.a < bef_byte) ? 1 : 0; // Overflow occurred, so set carry bit
-	cpu.n = 0;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void ADC_A_E()
-{
-	byte bef_byte = cpu.a;
-	byte bef = cpu.a & 0x0F;
-	cpu.a += cpu.e + cpu.ca;
-	cpu.hc = ((cpu.a & 0x0F) < bef) ? 1 : 0;
-	cpu.ca = (cpu.a < bef_byte) ? 1 : 0; // Overflow occurred, so set carry bit
-	cpu.n = 0;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void ADC_A_H()
-{
-	byte bef_byte = cpu.a;
-	byte bef = cpu.a & 0x0F;
-	cpu.a += cpu.h + cpu.ca;
-	cpu.hc = ((cpu.a & 0x0F) < bef) ? 1 : 0;
-	cpu.ca = (cpu.a < bef_byte) ? 1 : 0; // Overflow occurred, so set carry bit
-	cpu.n = 0;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void ADC_A_L()
-{
-	byte bef_byte = cpu.a;
-	byte bef = cpu.a & 0x0F;
-	cpu.a += cpu.l + cpu.ca;
-	cpu.hc = ((cpu.a & 0x0F) < bef) ? 1 : 0;
-	cpu.ca = (cpu.a < bef_byte) ? 1 : 0; // Overflow occurred, so set carry bit
-	cpu.n = 0;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void ADC_A_IHL()
-{
-	byte ihl = read_byte(cpu.hl);
-	byte bef_byte = cpu.a;
-	byte bef = cpu.a & 0x0F;
-	cpu.a += ihl + cpu.ca;
-	cpu.hc = ((cpu.a & 0x0F) < bef) ? 1 : 0;
-	cpu.ca = (cpu.a < bef_byte) ? 1 : 0; // Overflow occurred, so set carry bit
-	cpu.n = 0;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.t += 8;
-	cpu.last_t = 8;
-}
-
-void ADC_A_A()
-{
-	byte bef_byte = cpu.a;
-	byte bef = cpu.a & 0x0F;
-	cpu.a += cpu.a + cpu.ca;
-	cpu.hc = ((cpu.a & 0x0F) < bef) ? 1 : 0;
-	cpu.ca = (cpu.a < bef_byte) ? 1 : 0; // Overflow occurred, so set carry bit
-	cpu.n = 0;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void SUB_B()
-{
-	byte bef_byte = cpu.a;
-	byte bef = cpu.a & 0x0F;
-	cpu.a -= cpu.b;
-	cpu.hc = ((cpu.a & 0x0F) < bef) ? 1 : 0; // Set if no half-borrow
-	cpu.ca = (cpu.a < bef_byte) ? 1 : 0; // Set if no borrow
-	cpu.n = 1;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void SUB_C()
-{
-	byte bef_byte = cpu.a;
-	byte bef = cpu.a & 0x0F;
-	cpu.a -= cpu.c;
-	cpu.hc = ((cpu.a & 0x0F) < bef) ? 1 : 0; // Set if no half-borrow
-	cpu.ca = (cpu.a < bef_byte) ? 1 : 0; // Set if no borrow
-	cpu.n = 1;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void SUB_D()
-{
-	byte bef_byte = cpu.a;
-	byte bef = cpu.a & 0x0F;
-	cpu.a -= cpu.d;
-	cpu.hc = ((cpu.a & 0x0F) < bef) ? 1 : 0; // Set if no half-borrow
-	cpu.ca = (cpu.a < bef_byte) ? 1 : 0; // Set if no borrow
-	cpu.n = 1;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void SUB_E()
-{
-	byte bef_byte = cpu.a;
-	byte bef = cpu.a & 0x0F;
-	cpu.a -= cpu.e;
-	cpu.hc = ((cpu.a & 0x0F) < bef) ? 1 : 0; // Set if no half-borrow
-	cpu.ca = (cpu.a < bef_byte) ? 1 : 0; // Set if no borrow
-	cpu.n = 1;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void SUB_H()
-{
-	byte bef_byte = cpu.a;
-	byte bef = cpu.a & 0x0F;
-	cpu.a -= cpu.h;
-	cpu.hc = ((cpu.a & 0x0F) < bef) ? 1 : 0; // Set if no half-borrow
-	cpu.ca = (cpu.a < bef_byte) ? 1 : 0; // Set if no borrow
-	cpu.n = 1;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void SUB_L()
-{
-	byte bef_byte = cpu.a;
-	byte bef = cpu.a & 0x0F;
-	cpu.a -= cpu.h;
-	cpu.hc = ((cpu.a & 0x0F) < bef) ? 1 : 0; // Set if no half-borrow
-	cpu.ca = (cpu.a < bef_byte) ? 1 : 0; // Set if no borrow
-	cpu.n = 1;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void SUB_IHL()
-{
-	byte ihl = read_byte(cpu.hl);
-	byte bef_byte = cpu.a;
-	byte bef = cpu.a & 0x0F;
-	cpu.a -= ihl;
-	cpu.hc = ((cpu.a & 0x0F) < bef) ? 1 : 0; // Set if no half-borrow
-	cpu.ca = (cpu.a < bef_byte) ? 1 : 0; // Set if no borrow
-	cpu.n = 1;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.t += 8;
-	cpu.last_t = 8;
-}
-
-void SUB_A()
-{
-	byte bef_byte = cpu.a;
-	byte bef = cpu.a & 0x0F;
-	cpu.a -= cpu.a;
-	cpu.hc = ((cpu.a & 0x0F) < bef) ? 1 : 0; // Set if no half-borrow
-	cpu.ca = (cpu.a < bef_byte) ? 1 : 0; // Set if no borrow
-	cpu.n = 1;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void SBC_A_B()
-{
-	byte bef_byte = cpu.a;
-	byte bef = cpu.a & 0x0F;
-	cpu.a -= cpu.b + cpu.ca;
-	cpu.hc = ((cpu.a & 0x0F) < bef) ? 1 : 0; // Set if no half-borrow
-	cpu.ca = (cpu.a < bef_byte) ? 1 : 0; // Set if no borrow
-	cpu.n = 1;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void SBC_A_C()
-{
-	byte bef_byte = cpu.a;
-	byte bef = cpu.a & 0x0F;
-	cpu.a -= cpu.c + cpu.ca;
-	cpu.hc = ((cpu.a & 0x0F) < bef) ? 1 : 0; // Set if no half-borrow
-	cpu.ca = (cpu.a < bef_byte) ? 1 : 0; // Set if no borrow
-	cpu.n = 1;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void SBC_A_D()
-{
-	byte bef_byte = cpu.a;
-	byte bef = cpu.a & 0x0F;
-	cpu.a -= cpu.d + cpu.ca;
-	cpu.hc = ((cpu.a & 0x0F) < bef) ? 1 : 0; // Set if no half-borrow
-	cpu.ca = (cpu.a < bef_byte) ? 1 : 0; // Set if no borrow
-	cpu.n = 1;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void SBC_A_E()
-{
-	byte bef_byte = cpu.a;
-	byte bef = cpu.a & 0x0F;
-	cpu.a -= cpu.e + cpu.ca;
-	cpu.hc = ((cpu.a & 0x0F) < bef) ? 1 : 0; // Set if no half-borrow
-	cpu.ca = (cpu.a < bef_byte) ? 1 : 0; // Set if no borrow
-	cpu.n = 1;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void SBC_A_H()
-{
-	byte bef_byte = cpu.a;
-	byte bef = cpu.a & 0x0F;
-	cpu.a -= cpu.h + cpu.ca;
-	cpu.hc = ((cpu.a & 0x0F) < bef) ? 1 : 0; // Set if no half-borrow
-	cpu.ca = (cpu.a < bef_byte) ? 1 : 0; // Set if no borrow
-	cpu.n = 1;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void SBC_A_L()
-{
-	byte bef_byte = cpu.a;
-	byte bef = cpu.a & 0x0F;
-	cpu.a -= cpu.l + cpu.ca;
-	cpu.hc = ((cpu.a & 0x0F) < bef) ? 1 : 0; // Set if no half-borrow
-	cpu.ca = (cpu.a < bef_byte) ? 1 : 0; // Set if no borrow
-	cpu.n = 1;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void SBC_A_IHL()
-{
-	byte ihl = read_byte(cpu.hl);
-	byte bef_byte = cpu.a;
-	byte bef = cpu.a & 0x0F;
-	cpu.a -= ihl + cpu.ca;
-	cpu.hc = ((cpu.a & 0x0F) < bef) ? 1 : 0; // Set if no half-borrow
-	cpu.ca = (cpu.a < bef_byte) ? 1 : 0; // Set if no borrow
-	cpu.n = 1;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.t += 8;
-	cpu.last_t = 8;
-}
-
-void SBC_A_A()
-{
-	byte bef_byte = cpu.a;
-	byte bef = cpu.a & 0x0F;
-	cpu.a -= cpu.a + cpu.ca;
-	cpu.hc = ((cpu.a & 0x0F) < bef) ? 1 : 0; // Set if no half-borrow
-	cpu.ca = (cpu.a < bef_byte) ? 1 : 0; // Set if no borrow
-	cpu.n = 1;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void AND_B()
-{
-	cpu.a &= cpu.b;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.n = 0;
-	cpu.h = 1;
-	cpu.ca = 0;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void AND_C()
-{
-	cpu.a &= cpu.c;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.n = 0;
-	cpu.h = 1;
-	cpu.ca = 0;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void AND_D()
-{
-	cpu.a &= cpu.d;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.n = 0;
-	cpu.h = 1;
-	cpu.ca = 0;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void AND_E()
-{
-	cpu.a &= cpu.e;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.n = 0;
-	cpu.h = 1;
-	cpu.ca = 0;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void AND_H()
-{
-	cpu.a &= cpu.h;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.n = 0;
-	cpu.h = 1;
-	cpu.ca = 0;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void AND_L()
-{
-	cpu.a &= cpu.l;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.n = 0;
-	cpu.h = 1;
-	cpu.ca = 0;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void AND_IHL()
-{
-	cpu.a &= read_byte(cpu.hl);
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.n = 0;
-	cpu.h = 1;
-	cpu.ca = 0;
-	cpu.t += 8;
-	cpu.last_t = 8;
-}
-
-void AND_A()
-{
-	cpu.a &= cpu.a;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.n = 0;
-	cpu.h = 1;
-	cpu.ca = 0;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void XOR_B()
-{
-	cpu.a ^= cpu.b;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.n = 0;
-	cpu.h = 0;
-	cpu.ca = 0;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void XOR_C()
-{
-	cpu.a ^= cpu.c;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.n = 0;
-	cpu.h = 0;
-	cpu.ca = 0;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void XOR_D()
-{
-	cpu.a ^= cpu.d;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.n = 0;
-	cpu.h = 0;
-	cpu.ca = 0;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void XOR_E()
-{
-	cpu.a ^= cpu.e;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.n = 0;
-	cpu.h = 0;
-	cpu.ca = 0;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void XOR_H()
-{
-	cpu.a ^= cpu.h;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.n = 0;
-	cpu.h = 0;
-	cpu.ca = 0;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void XOR_L()
-{
-	cpu.a ^= cpu.l;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.n = 0;
-	cpu.h = 0;
-	cpu.ca = 0;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void XOR_IHL()
-{
-	cpu.a ^= read_byte(cpu.hl);
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.n = 0;
-	cpu.h = 0;
-	cpu.ca = 0;
-	cpu.t += 8;
-	cpu.last_t = 8;
-}
-
-void XOR_A()
-{ // Optimize this - always spits out 0
-	cpu.a ^= cpu.a;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.n = 0;
-	cpu.h = 0;
-	cpu.ca = 0;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void OR_B()
-{
-	cpu.a |= cpu.b;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.n = 0;
-	cpu.h = 0;
-	cpu.ca = 0;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void OR_C()
-{
-	cpu.a |= cpu.c;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.n = 0;
-	cpu.h = 0;
-	cpu.ca = 0;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void OR_D()
-{
-	cpu.a |= cpu.d;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.n = 0;
-	cpu.h = 0;
-	cpu.ca = 0;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void OR_E()
-{
-	cpu.a |= cpu.e;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.n = 0;
-	cpu.h = 0;
-	cpu.ca = 0;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void OR_H()
-{
-	cpu.a |= cpu.h;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.n = 0;
-	cpu.h = 0;
-	cpu.ca = 0;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void OR_L()
-{
-	cpu.a |= cpu.l;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.n = 0;
-	cpu.h = 0;
-	cpu.ca = 0;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void OR_IHL()
-{
-	cpu.a |= read_byte(cpu.hl);
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.n = 0;
-	cpu.h = 0;
-	cpu.ca = 0;
-	cpu.t += 8;
-	cpu.last_t = 8;
-}
-
-void OR_A()
-{
-	cpu.a |= cpu.a;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.n = 0;
-	cpu.h = 0;
-	cpu.ca = 0;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void CP_B()
-{
-	byte after = cpu.a - cpu.b;
-	cpu.hc = ((cpu.a & 0x0F) < (after & 0x0F)) ? 1 : 0; // Set if no half-borrow
-	cpu.ca = (cpu.a < after) ? 1 : 0; // Set if no borrow
-	cpu.n = 1;
-	cpu.z = (after) ? 0 : 1;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void CP_C()
-{
-	byte after = cpu.a - cpu.c;
-	cpu.hc = ((cpu.a & 0x0F) < (after & 0x0F)) ? 1 : 0; // Set if no half-borrow
-	cpu.ca = (cpu.a < after) ? 1 : 0; // Set if no borrow
-	cpu.n = 1;
-	cpu.z = (after) ? 0 : 1;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void CP_D()
-{
-	byte after = cpu.a - cpu.d;
-	cpu.hc = ((cpu.a & 0x0F) < (after & 0x0F)) ? 1 : 0; // Set if no half-borrow
-	cpu.ca = (cpu.a < after) ? 1 : 0; // Set if no borrow
-	cpu.n = 1;
-	cpu.z = (after) ? 0 : 1;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void CP_E()
-{
-	byte after = cpu.a - cpu.e;
-	cpu.hc = ((cpu.a & 0x0F) < (after & 0x0F)) ? 1 : 0; // Set if no half-borrow
-	cpu.ca = (cpu.a < after) ? 1 : 0; // Set if no borrow
-	cpu.n = 1;
-	cpu.z = (after) ? 0 : 1;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void CP_H()
-{
-	byte after = cpu.a - cpu.h;
-	cpu.hc = ((cpu.a & 0x0F) < (after & 0x0F)) ? 1 : 0; // Set if no half-borrow
-	cpu.ca = (cpu.a < after) ? 1 : 0; // Set if no borrow
-	cpu.n = 1;
-	cpu.z = (after) ? 0 : 1;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void CP_L()
-{
-	byte after = cpu.a - cpu.l;
-	cpu.hc = ((cpu.a & 0x0F) < (after & 0x0F)) ? 1 : 0; // Set if no half-borrow
-	cpu.ca = (cpu.a < after) ? 1 : 0; // Set if no borrow
-	cpu.n = 1;
-	cpu.z = (after) ? 0 : 1;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void CP_IHL()
-{
-	byte after = cpu.a - read_byte(cpu.hl);
-	cpu.hc = ((cpu.a & 0x0F) < (after & 0x0F)) ? 1 : 0; // Set if no half-borrow
-	cpu.ca = (cpu.a < after) ? 1 : 0; // Set if no borrow
-	cpu.n = 1;
-	cpu.z = (after) ? 0 : 1;
-	cpu.t += 8;
-	cpu.last_t = 8;
-}
-
-void CP_A()
-{
-	byte after = cpu.a - cpu.a;
-	cpu.hc = ((cpu.a & 0x0F) < (after & 0x0F)) ? 1 : 0; // Set if no half-borrow
-	cpu.ca = (cpu.a < after) ? 1 : 0; // Set if no borrow
-	cpu.n = 1;
-	cpu.z = (after) ? 0 : 1;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void ADD_A_d8()
-{
-	byte bef_byte = cpu.a;
-	byte bef = cpu.a & 0x0F;
-	cpu.a += read_byte(cpu.pc);
-	cpu.pc++;
-	cpu.hc = ((cpu.a & 0x0F) < bef) ? 1 : 0;
-	cpu.ca = (cpu.a < bef_byte) ? 1 : 0; // Overflow occurred, so set carry bit
-	cpu.n = 0;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.t += 8;
-	cpu.last_t = 8;
-}
-
-void ADC_A_d8()
-{
-	byte bef_byte = cpu.a;
-	byte bef = cpu.a & 0x0F;
-	cpu.a += read_byte(cpu.pc) + cpu.ca;
-	cpu.pc++;
-	cpu.hc = ((cpu.a & 0x0F) < bef) ? 1 : 0;
-	cpu.ca = (cpu.a < bef_byte) ? 1 : 0; // Overflow occurred, so set carry bit
-	cpu.n = 0;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.t += 8;
-	cpu.last_t = 8;
-}
-
-void SUB_d8()
-{
-	byte bef_byte = cpu.a;
-	byte bef = cpu.a & 0x0F;
-	cpu.a -= read_byte(cpu.pc);
-	cpu.pc++;
-	cpu.hc = ((cpu.a & 0x0F) < bef) ? 1 : 0; // Set if no half-borrow
-	cpu.ca = (cpu.a < bef_byte) ? 1 : 0; // Set if no borrow
-	cpu.n = 1;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.t += 8;
-	cpu.last_t = 8;
-}
-
-void SBC_A_d8()
-{
-	byte bef_byte = cpu.a;
-	byte bef = cpu.a & 0x0F;
-	cpu.a -= read_byte(cpu.pc) + cpu.ca;
-	cpu.pc++;
-	cpu.hc = ((cpu.a & 0x0F) < bef) ? 1 : 0; // Set if no half-borrow
-	cpu.ca = (cpu.a < bef_byte) ? 1 : 0; // Set if no borrow
-	cpu.n = 1;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.t += 8;
-	cpu.last_t = 8;
-}
-
-void AND_d8()
-{
-	cpu.a &= read_byte(cpu.pc);
-	cpu.pc++;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.n = 0;
-	cpu.h = 1;
-	cpu.ca = 0;
-	cpu.t += 4;
-	cpu.last_t = 4;
-}
-
-void XOR_d8()
-{
-	cpu.a ^= read_byte(cpu.pc);
-	cpu.pc++;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.n = 0;
-	cpu.h = 0;
-	cpu.ca = 0;
-	cpu.t += 8;
-	cpu.last_t = 8;
-}
-
-void OR_d8()
-{
-	cpu.a |= read_byte(cpu.pc);
-	cpu.pc++;
-	cpu.z = (cpu.a) ? 0 : 1;
-	cpu.n = 0;
-	cpu.h = 0;
-	cpu.ca = 0;
-	cpu.t += 8;
-	cpu.last_t = 8;
-}
 
-void CP_d8()
-{
-	byte after = cpu.a - read_byte(cpu.pc);
-	cpu.pc++;
-	cpu.hc = ((cpu.a & 0x0F) < (after & 0x0F)) ? 1 : 0; // Set if no half-borrow
-	cpu.ca = (cpu.a < after) ? 1 : 0; // Set if no borrow
-	cpu.n = 1;
-	cpu.z = (after) ? 0 : 1;
-	cpu.t += 8;
-	cpu.last_t = 8;
+void CPL(struct machine_t *gem) {
+    struct cpu_t *cpu = gem->cpu;
+	cpu->a = ~cpu->a;
+	cpu->n = 1;
+	cpu->hc = 1;
+}
+
+
+void SCF(struct machine_t *gem) {
+    struct cpu_t *cpu = gem->cpu;
+	cpu->ca = 1;
+	cpu->n = 0;
+	cpu->hc = 0;
+}
+
+
+void CCF(struct machine_t *gem) {
+    struct cpu_t *cpu = gem->cpu;
+	cpu->n = 0;
+	cpu->hc = 0;
+	cpu->ca = ~cpu->ca;
+}
+
+
+#define ADD_A_R8(REG8, reg8)                        \
+    void ADD_A_ ## REG8 (struct machine_t *gem) {   \
+        struct cpu_t *cpu = gem->cpu;               \
+        byte bef_byte = cpu->a;                     \
+        byte bef = cpu->a & 0x0F;                   \
+        cpu->a += cpu->reg8;                        \
+        cpu->hc = ((cpu->a & 0x0F) < bef) ? 1 : 0;  \
+        cpu->ca = (cpu->a < bef_byte) ? 1 : 0;      \
+        cpu->n = 0;                                 \
+        cpu->z = (cpu->a) ? 0 : 1;                  \
+    }
+
+ADD_A_R8(B, b)
+ADD_A_R8(C, c)
+ADD_A_R8(D, d)
+ADD_A_R8(E, e)
+ADD_A_R8(H, h)
+ADD_A_R8(L, l)
+ADD_A_R8(IHL, ihl)
+ADD_A_R8(A, a)
+
+
+#define ADC_A_R8(REG8, reg8)                        \
+    void ADC_A_ ## REG8 (struct machine_t *gem) {   \
+        struct cpu_t *cpu = gem->cpu;               \
+        byte bef_byte = cpu->a;                     \
+        byte bef = cpu->a & 0x0F;                   \
+        cpu->a += cpu->reg8 + cpu->ca;              \
+        cpu->hc = ((cpu->a & 0x0F) < bef) ? 1 : 0;  \
+        cpu->ca = (cpu->a < bef_byte) ? 1 : 0;      \
+        cpu->n = 0;                                 \
+        cpu->z = (cpu->a) ? 0 : 1;                  \
+    }
+
+ADC_A_R8(B, b)
+ADC_A_R8(C, c)
+ADC_A_R8(D, d)
+ADC_A_R8(E, e)
+ADC_A_R8(H, h)
+ADC_A_R8(L, l)
+ADC_A_R8(IHL, ihl)
+ADC_A_R8(A, a)
+
+
+#define SUB_R8(REG8, reg8)                      \
+    void SUB_ ## REG8 (struct machine_t *gem) {     \
+        struct cpu_t *cpu = gem->cpu;               \
+        byte bef_byte = cpu->a;                     \
+        byte bef = cpu->a & 0x0F;                   \
+        cpu->a -= cpu->reg8;                        \
+        cpu->hc = ((cpu->a & 0x0F) < bef) ? 1 : 0;  \
+        cpu->ca = (cpu->a < bef_byte) ? 1 : 0;      \
+        cpu->n = 1;                                 \
+        cpu->z = (cpu->a) ? 0 : 1;                  \
+    }
+
+SUB_R8(B, b)
+SUB_R8(C, c)
+SUB_R8(D, d)
+SUB_R8(E, e)
+SUB_R8(H, h)
+SUB_R8(L, l)
+SUB_R8(IHL, ihl)
+SUB_R8(A, a)
+
+
+#define SBC_A_R8(REG8, reg8)                        \
+    void SBC_A_ ## REG8 (struct machine_t *gem) {   \
+        struct cpu_t *cpu = gem->cpu;               \
+        byte bef_byte = cpu->a;                     \
+        byte bef = cpu->a & 0x0F;                   \
+        cpu->a -= cpu->reg8 + cpu->ca;              \
+        cpu->hc = ((cpu->a & 0x0F) < bef) ? 1 : 0;  \
+        cpu->ca = (cpu->a < bef_byte) ? 1 : 0;      \
+        cpu->n = 1;                                 \
+        cpu->z = (cpu->a) ? 0 : 1;                  \
+    }
+
+SBC_A_R8(B, b)
+SBC_A_R8(C, c)
+SBC_A_R8(D, d)
+SBC_A_R8(E, e)
+SBC_A_R8(H, h)
+SBC_A_R8(L, l)
+SBC_A_R8(IHL, ihl)
+SBC_A_R8(A, a)
+
+
+#define AND_R8(REG8, reg8)                      \
+    void AND_ ## REG8 (struct machine_t *gem) { \
+        struct cpu_t *cpu = gem->cpu;           \
+        cpu->a &= cpu->reg8;                    \
+        cpu->z = (cpu->a) ? 0 : 1;              \
+        cpu->n = 0;                             \
+        cpu->h = 1;                             \
+        cpu->ca = 0;                            \
+    }
+
+AND_R8(B, b)
+AND_R8(C, c)
+AND_R8(D, d)
+AND_R8(E, e)
+AND_R8(H, h)
+AND_R8(L, l)
+AND_R8(IHL, ihl)
+AND_R8(A, a)
+
+
+#define XOR_R8(REG8, reg8)                      \
+    void XOR_ ## REG8 (struct machine_t *gem) { \
+        struct cpu_t *cpu = gem->cpu;           \
+        cpu->a ^= cpu->reg8;                    \
+        cpu->z = (cpu->a) ? 0 : 1;              \
+        cpu->n = 0;                             \
+        cpu->h = 0;                             \
+        cpu->ca = 0;                            \
+    }
+
+XOR_R8(B, b)
+XOR_R8(C, c)
+XOR_R8(D, d)
+XOR_R8(E, e)
+XOR_R8(H, h)
+XOR_R8(L, l)
+XOR_R8(IHL, ihl)
+XOR_R8(A, a)
+
+
+#define OR_R8(REG8, reg8)                       \
+    void OR_ ## REG8 (struct machine_t *gem) {  \
+        struct cpu_t *cpu = gem->cpu;           \
+        cpu->a |= cpu->reg8;                    \
+        cpu->z = (cpu->a) ? 0 : 1;              \
+        cpu->n = 0;                             \
+        cpu->h = 0;                             \
+        cpu->ca = 0;                            \
+    }
+
+OR_R8(B, b)
+OR_R8(C, c)
+OR_R8(D, d)
+OR_R8(E, e)
+OR_R8(H, h)
+OR_R8(L, l)
+OR_R8(IHL, ihl)
+OR_R8(A, a)
+
+
+#define CP_R8(REG8, reg8)                                       \
+    void CP_ ## REG8 (struct machine_t *gem) {                  \
+        struct cpu_t *cpu = gem->cpu;                           \
+        byte after = cpu->a - cpu->reg8;                        \
+        cpu->hc = ((cpu->a & 0x0F) < (after & 0x0F)) ? 1 : 0;   \
+        cpu->ca = (cpu->a < after) ? 1 : 0;                     \
+        cpu->n = 1;                                             \
+        cpu->z = (after) ? 0 : 1;                               \
+    }
+
+CP_R8(B, b)
+CP_R8(C, c)
+CP_R8(D, d)
+CP_R8(E, e)
+CP_R8(H, h)
+CP_R8(L, l)
+CP_R8(IHL, ihl)
+CP_R8(A, a)
+
+void ADD_A_d8(struct machine_t *gem) {
+    struct cpu_t *cpu = gem->cpu;
+	byte bef_byte = cpu->a;
+	byte bef = cpu->a & 0x0F;
+	cpu->a += read_byte(gem, cpu->pc);
+	cpu->pc++;
+	cpu->hc = ((cpu->a & 0x0F) < bef) ? 1 : 0;
+	cpu->ca = (cpu->a < bef_byte) ? 1 : 0; // Overflow occurred, so set carry bit
+	cpu->n = 0;
+	cpu->z = (cpu->a) ? 0 : 1;
+}
+
+void ADC_A_d8(struct machine_t *gem) {
+    struct cpu_t *cpu = gem->cpu;
+	byte bef_byte = cpu->a;
+	byte bef = cpu->a & 0x0F;
+	cpu->a += read_byte(gem, cpu->pc) + cpu->ca;
+	cpu->pc++;
+	cpu->hc = ((cpu->a & 0x0F) < bef) ? 1 : 0;
+	cpu->ca = (cpu->a < bef_byte) ? 1 : 0; // Overflow occurred, so set carry bit
+	cpu->n = 0;
+	cpu->z = (cpu->a) ? 0 : 1;
+}
+
+void SUB_d8(struct machine_t *gem) {
+    struct cpu_t *cpu = gem->cpu;
+	byte bef_byte = cpu->a;
+	byte bef = cpu->a & 0x0F;
+	cpu->a -= read_byte(gem, cpu->pc);
+	cpu->pc++;
+	cpu->hc = ((cpu->a & 0x0F) < bef) ? 1 : 0; // Set if no half-borrow
+	cpu->ca = (cpu->a < bef_byte) ? 1 : 0; // Set if no borrow
+	cpu->n = 1;
+	cpu->z = (cpu->a) ? 0 : 1;
+}
+
+void SBC_A_d8(struct machine_t *gem) {
+    struct cpu_t *cpu = gem->cpu;
+	byte bef_byte = cpu->a;
+	byte bef = cpu->a & 0x0F;
+	cpu->a -= read_byte(gem, cpu->pc) + cpu->ca;
+	cpu->pc++;
+	cpu->hc = ((cpu->a & 0x0F) < bef) ? 1 : 0; // Set if no half-borrow
+	cpu->ca = (cpu->a < bef_byte) ? 1 : 0; // Set if no borrow
+	cpu->n = 1;
+	cpu->z = (cpu->a) ? 0 : 1;
+}
+
+void AND_d8(struct machine_t *gem) {
+    struct cpu_t *cpu = gem->cpu;
+	cpu->a &= read_byte(gem, cpu->pc);
+	cpu->pc++;
+	cpu->z = (cpu->a) ? 0 : 1;
+	cpu->n = 0;
+	cpu->h = 1;
+	cpu->ca = 0;
+}
+
+void XOR_d8(struct machine_t *gem) {
+    struct cpu_t *cpu = gem->cpu;
+	cpu->a ^= read_byte(gem, cpu->pc);
+	cpu->pc++;
+	cpu->z = (cpu->a) ? 0 : 1;
+	cpu->n = 0;
+	cpu->h = 0;
+	cpu->ca = 0;
+}
+
+void OR_d8(struct machine_t *gem) {
+    struct cpu_t *cpu = gem->cpu;
+	cpu->a |= read_byte(gem, cpu->pc);
+	cpu->pc++;
+	cpu->z = (cpu->a) ? 0 : 1;
+	cpu->n = 0;
+	cpu->h = 0;
+	cpu->ca = 0;
+}
+
+void CP_d8(struct machine_t *gem) {
+    struct cpu_t *cpu = gem->cpu;
+	byte after = cpu->a - read_byte(gem, cpu->pc);
+	cpu->pc++;
+	cpu->hc = ((cpu->a & 0x0F) < (after & 0x0F)) ? 1 : 0; // Set if no half-borrow
+	cpu->ca = (cpu->a < after) ? 1 : 0; // Set if no borrow
+	cpu->n = 1;
+	cpu->z = (after) ? 0 : 1;
 }

@@ -8,11 +8,13 @@
 #ifndef MISC_H_
 #define MISC_H_
 
-void NOP();
-void STOP();
-void HALT();
-void DI();
-void EI();
-void XX();
+#include "../common.h"
+
+void NOP(struct machine_t *gem);
+void STOP(struct machine_t *gem);
+void HALT(struct machine_t *gem);
+void DI(struct machine_t *gem);
+void EI(struct machine_t *gem);
+void XX(struct machine_t *gem);
 
 #endif /* MISC_H_ */

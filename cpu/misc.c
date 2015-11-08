@@ -6,45 +6,39 @@
  */
 
 #include <stdlib.h>
-#include "../gem.h"
+
+#include "../common.h"
 #include "../cpu.h"
 #include "../mmu.h"
+#include "misc.h"
 
-void NOP()
-{
-	cpu.t += 4;
-	cpu.last_t = 4;
+void NOP(struct machine_t *gem) {
+    struct cpu_t *cpu = gem->cpu;
+    // Do nothing
 }
 
-void STOP()
-{
+void STOP(struct machine_t *gem) {
+    struct cpu_t *cpu = gem->cpu;
 	// TODO: Halt until interrupt
-	cpu.t += 4;
-	cpu.last_t = 4;
 }
 
-void HALT()
-{
-	cpu.halt = true;
-	cpu.t += 4;
-	cpu.last_t = 4;
+void HALT(struct machine_t *gem) {
+    struct cpu_t *cpu = gem->cpu;
+	cpu->halt = true;
 }
 
-void DI()
-{
-	cpu.ime = false;
-	cpu.t += 4;
-	cpu.last_t = 4;
+void DI(struct machine_t *gem) {
+    struct cpu_t *cpu = gem->cpu;
+	cpu->ime = false;
 }
 
-void EI()
-{
-	cpu.ime = true;
-	cpu.t += 4;
-	cpu.last_t = 4;
+void EI(struct machine_t *gem) {
+    struct cpu_t *cpu = gem->cpu;
+	cpu->ime = true;
 }
 
-void XX() {
-	ERROR("CPU tried to execute an invalid opcode 0x%02X at 0x%04X! Exiting...", read_byte(cpu.pc), cpu.pc);
+void XX(struct machine_t *gem) {
+    struct cpu_t *cpu = gem->cpu;
+	ERROR("[CPU] Tried to execute an invalid opcode 0x%02X at 0x%04X! Exiting...", read_byte(gem, cpu->pc), cpu->pc);
 	exit(-1);
 }

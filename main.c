@@ -5,16 +5,11 @@
 #include <string.h>
 #include <SDL/SDL.h>
 
+#include "common.h"
 #include "cpu.h"
-#include "gem.h"
 #include "gpu.h"
 #include "mmu.h"
 #include "input.h"
-
-bool run;
-
-void reset();
-void execute();
 
 int main(int argc, char **argv) {
 
@@ -23,48 +18,32 @@ int main(int argc, char **argv) {
 	// lcd_ingray();
 	// clrscr();
 
-	reset();
+	struct machine_t *gem = init();
 
 	if (argc == 2) {
-		load_rom(argv[1]);
+		load_rom(gem->mmu, argv[1]);
 		INFO("Successfully loaded rom file %s\n", argv[1]);
 	} else {
-		load_rom("adjustris.gb.tns");
+		load_rom(gem->mmu, "adjustris.gb.tns");
 		INFO("Successfully loaded rom file %s\n", "adjustris.gb.tns");
 	}
 
-	while(run) {
+	while(gem->run) {
         Uint32 t1 = SDL_GetTicks();
 
-        while (cpu.t < 70224) {
-            execute();
+        while (gem->cpu->t < 70224) {
+            execute(gem);
         }
 
-        cpu.t -= 70224;
+        gem->cpu->t -= 70224;
 
         Uint32 t2 = SDL_GetTicks();
 
         SDL_Delay(17 - (t2 - t1));
 	}
 
-    SDL_Quit();
-
-    // Need to destroy here
+    destroy(gem);
 
 	return 0;
 }
 
-void reset() {
-    run = true;
-	reset_cpu();
-	reset_mmu();
-	reset_gpu();
-}
-
-void execute() {
-    step_cpu();
-    do_dma();
-    check_interrupts();
-    check_keys();
-    step_gpu();
-}
