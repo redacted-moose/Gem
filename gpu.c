@@ -14,151 +14,22 @@
 #include "gpu.h"
 #include "cpu.h"
 #include "mmu.h"
+#include "graphics.h"
 
 void renderscan_gpu(struct machine_t *);
-void renderscreen_gpu(struct machine_t *);
-
-SDL_Surface *init_gfx() {
-    SDL_Surface *screen;
-    SDL_Color colors[256];
-
-	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-		fprintf(stderr, "couldn't initialize sdl: %s\n", SDL_GetError());
-		exit(1);
-	}
-
-	// make a grayscale color palette
-	for(int i = 0; i < 256; i++){
-		colors[i].r = i;
-		colors[i].g = i;
-		colors[i].b = i;
-	}
-
-	atexit(SDL_Quit);
-
-	screen = SDL_SetVideoMode(GPU_SCREEN_WIDTH, GPU_SCREEN_HEIGHT, 8, SDL_SWSURFACE);
-	if (screen == NULL) {
-		fprintf(stderr, "couldn't set %dx%dx8 video mode: %s\n",
-				GPU_SCREEN_WIDTH, GPU_SCREEN_HEIGHT, SDL_GetError());
-		exit(1);
-	}
-
-	// set a grayscale color palette
-	SDL_SetColors(screen, colors, 0, 256);
-
-	SDL_WM_SetCaption("gem - a gameboy emulator", NULL);
-
-    return screen;
-}
+void renderscreen_gpu();
 
 struct gpu_t *reset_gpu() {
     struct gpu_t *gpu = malloc(sizeof(struct gpu_t));
 	gpu->mode = HBLANK;
 	gpu->curline = 0;
-    gpu->screen = init_gfx();
+    reset_graphics();
     return gpu;
 }
 
 void destroy_gpu(struct gpu_t *gpu) {
-    SDL_Quit();
+    destroy_graphics();
     free(gpu);
-}
-
-Uint32 color_map[4] = {
-		0x000000ff, // white
-		0x000000aa, // light gray
-		0x00000055, // dark grey
-		0x00000000  // black
-};
-
-// this is sketchy...
-void set_pixel(struct gpu_t *gpu, int x, int y, Uint32 color) {
-//	unsigned char* p = (unsigned char*)(screen
-//			+ ((x >> 1) + (y << 7) + (y << 5)));
-//	*p = (x & 1) ? ((*p & 0xf0) | color) : ((*p & 0x0f) | (color << 4));
-    if (SDL_MUSTLOCK(gpu->screen)) {
-        if (SDL_LockSurface(gpu->screen) < 0) {
-            fprintf(stderr, "Can't lock screen: %s\n", SDL_GetError());
-            return;
-        }
-    }
-
-	int bpp = gpu->screen->format->BytesPerPixel;
-	/* here p is the address to the pixel we want to set */
-	Uint8 *p = (Uint8 *) gpu->screen->pixels + y * gpu->screen->pitch + x * bpp;
-
-	switch (bpp) {
-	case 1:
-		*p = color;
-		break;
-
-	case 2:
-		*(Uint16 *) p = color;
-		break;
-
-	case 3:
-		if (SDL_BYTEORDER == SDL_BIG_ENDIAN) {
-			p[0] = (color >> 16) & 0xff;
-			p[1] = (color >> 8) & 0xff;
-			p[2] = color & 0xff;
-		} else {
-			p[0] = color & 0xff;
-			p[1] = (color >> 8) & 0xff;
-			p[2] = (color >> 16) & 0xff;
-		}
-		break;
-
-	case 4:
-		*(Uint32 *) p = color;
-		break;
-	}
-
-    if (SDL_MUSTLOCK(gpu->screen)) {
-        SDL_UnlockSurface(gpu->screen);
-    }
-
-}
-
-/**
- * return the pixel value at (x, y)
- * note: the surface must be locked before calling this!
- */
-Uint32 get_pixel(struct gpu_t *gpu, int x, int y)
-{
-    if (SDL_MUSTLOCK(gpu->screen)) {
-        if (SDL_LockSurface(gpu->screen) < 0) {
-            fprintf(stderr, "Can't lock screen: %s\n", SDL_GetError());
-            return 0;
-        }
-    }
-
-    int bpp = gpu->screen->format->BytesPerPixel;
-    /* here p is the address to the pixel we want to retrieve */
-    Uint8 *p = (Uint8 *)gpu->screen->pixels + y * gpu->screen->pitch + x * bpp;
-
-    switch(bpp) {
-    case 1:
-        return *p;
-
-    case 2:
-        return *(Uint16 *)p;
-
-    case 3:
-        if(SDL_BYTEORDER == SDL_BIG_ENDIAN)
-            return p[0] << 16 | p[1] << 8 | p[2];
-        else
-            return p[0] | p[1] << 8 | p[2] << 16;
-
-    case 4:
-        return *(Uint32 *)p;
-
-    default:
-        return 0;       /* shouldn't happen, but avoids warnings */
-    }
-
-    if (SDL_MUSTLOCK(gpu->screen)) {
-        SDL_UnlockSurface(gpu->screen);
-    }
 }
 
 /**
@@ -172,7 +43,7 @@ void step_gpu(struct machine_t *gem) {
 	switch (gpu->mode) {
 	case OAM_READ:
 		if (cpu->t >= OAM_READ_CYCLE_COUNT) {
-			cpu->t = 0;
+			cpu->t = 0; // This is bad - shouldn't directly muck with cpu timing value
 			gpu->mode = VRAM_READ;
             INFO("[GPU] Entering VRAM Read mode\n");
 		}
@@ -198,7 +69,7 @@ void step_gpu(struct machine_t *gem) {
                 mmu->i_flag.vblank = 1;
 				// plot to screen
                 INFO("[GPU] Refreshing screen\n");
-				renderscreen_gpu(gem);
+				renderscreen_gpu();
 			} else {
 				gpu->mode = OAM_READ;
                 INFO("[GPU] Entering OAM Read mode\n");
@@ -324,16 +195,16 @@ void renderscan_gpu(struct machine_t *gem) {
 	}
 
     for (int i = 0; i < GPU_SCREEN_WIDTH; i++) {
-        set_pixel(gpu, i, gpu->curline, color_map[scanrow[i]]);
+        set_pixel(i, gpu->curline, scanrow[i]);
     }
 }
 
 /**
  * blits the internal screen to sdl
  */
-void renderscreen_gpu(struct machine_t *gem) {
-	/* sdl_updaterect(screen, 0, 0, gpu_screen_width, gpu_screen_height); */
-    SDL_Flip(gem->gpu->screen);
+void renderscreen_gpu() {
+    /* SDL_Flip(gem->gpu->screen); */
+    blit_screen();
 }
 
 byte read_byte_gpu(struct gpu_t *gpu, word address) {

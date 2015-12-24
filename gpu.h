@@ -132,8 +132,6 @@ struct gpu_t {
 
 	palette object_0;
 	palette object_1;
-
-    SDL_Surface *screen;
 };
 
 struct gpu_t *reset_gpu();

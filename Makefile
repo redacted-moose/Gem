@@ -22,11 +22,11 @@ LDFLAGS += `sdl-config --libs`
 ifeq ($(DEBUG),FALSE)
 	CFLAGS += -Os
 else
-	CFLAGS += -O0 -g -D DEBUG
+	CFLAGS += -Og -g -D DEBUG
     # LDFLAGS += --debug
 endif
 
-CSOURCES = $(wildcard *.c) $(wildcard cpu/*.c)
+CSOURCES = $(wildcard *.c) $(wildcard cpu/*.c) graphics/sdl.c
 ASMSOURCES = $(wildcard *.S) $(wildcard cpu/*.S)
 CPPOBJS = $(patsubst %.cpp,%.o,$(wildcard *.cpp)) $(patsubst %.cpp,%.o,$(wildcard cpu/*.cpp))
 OBJS = $(patsubst %.c,%.o,$(CSOURCES)) $(patsubst %.S,%.o,$(ASMSOURCES)) $(CPPOBJS)
@@ -55,7 +55,7 @@ endif
 # DISTDIR = lib
 EXE = gem.bin
 DISTDIR = bin
-vpath %.tns $(DISTDIR) 
+vpath %.tns $(DISTDIR)
 
 
 all: $(EXE)

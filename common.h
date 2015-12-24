@@ -11,14 +11,14 @@ typedef int8_t    s_byte; // Signed byte
 typedef int16_t   s_word; // Signed word
 
 #define PRINT(...)  fprintf(stderr, __VA_ARGS__)
-#define ERROR(M, ...)  PRINT("[ERROR]\t(%s:%-20d)\t" M, __FILE__, __LINE__, ##__VA_ARGS__)
+#define ERROR(M, ...)  PRINT("[ERROR]\t(%s:%d)\t" M, __FILE__, __LINE__, ##__VA_ARGS__)
 
 #if defined (DEBUG)
-#define INFO(M, ...)	PRINT("[DEBUG]\t(%s:%-20d)\t" M, __FILE__, __LINE__, ##__VA_ARGS__)
-#define WARN(M, ...)	PRINT("[ WARN]\t(%s:%-20d)\t" M, __FILE__, __LINE__, ##__VA_ARGS__)
+#define INFO(M, ...)	PRINT("[DEBUG]\t(%s:%d)\t" M, __FILE__, __LINE__, ##__VA_ARGS__)
+#define WARN(M, ...)	PRINT("[ WARN]\t(%s:%d)\t" M, __FILE__, __LINE__, ##__VA_ARGS__)
 #elif defined (WARN)
 #define INFO(M, ...)   ((void)0)
-#define WARN(M, ...)   PRINT("[ WARN]\t(%s:%-20d)\t" M, __FILE__, __LINE__, ##__VA_ARGS__)
+#define WARN(M, ...)   PRINT("[ WARN]\t(%s:%d)\t" M, __FILE__, __LINE__, ##__VA_ARGS__)
 #else
 #define INFO(M, ...)   ((void)0)
 #define WARN(M, ...)   ((void)0)

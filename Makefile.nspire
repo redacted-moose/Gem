@@ -8,7 +8,7 @@ LDFLAGS =
 ifeq ($(DEBUG),FALSE)
 	GCCFLAGS += -Os
 else
-	GCCFLAGS += -O0 -g -D DEBUG
+	GCCFLAGS += -Og -g -D DEBUG
 	LDFLAGS += --debug
 endif
 CSOURCES = $(wildcard *.c) $(wildcard */*.c)
