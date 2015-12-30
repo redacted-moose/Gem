@@ -9,7 +9,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <SDL/SDL.h>
 
 #include "gpu.h"
 #include "cpu.h"
@@ -23,6 +22,7 @@ struct gpu_t *reset_gpu() {
     struct gpu_t *gpu = malloc(sizeof(struct gpu_t));
 	gpu->mode = HBLANK;
 	gpu->curline = 0;
+    gpu->t = 0;
     reset_graphics();
     return gpu;
 }
@@ -42,16 +42,16 @@ void step_gpu(struct machine_t *gem) {
 
 	switch (gpu->mode) {
 	case OAM_READ:
-		if (cpu->t >= OAM_READ_CYCLE_COUNT) {
-			cpu->t = 0; // This is bad - shouldn't directly muck with cpu timing value
+		if (gpu->t >= OAM_READ_CYCLE_COUNT) {
+			gpu->t = 0; // This is bad - shouldn't directly muck with cpu timing value
 			gpu->mode = VRAM_READ;
             INFO("[GPU] Entering VRAM Read mode\n");
 		}
 		break;
 
 	case VRAM_READ:
-		if (cpu->t >= VRAM_READ_CYCLE_COUNT) {
-			cpu->t = 0;
+		if (gpu->t >= VRAM_READ_CYCLE_COUNT) {
+			gpu->t = 0;
 			gpu->mode = HBLANK;
             INFO("[GPU] Entering HBLANK\n");
             INFO("[GPU] Rendering scanline...\n");
@@ -60,8 +60,8 @@ void step_gpu(struct machine_t *gem) {
 		break;
 
 	case HBLANK:
-		if (cpu->t >= HBLANK_CYCLE_COUNT) {
-			cpu->t = 0;
+		if (gpu->t >= HBLANK_CYCLE_COUNT) {
+			gpu->t = 0;
 			gpu->curline++;
 			if (gpu->curline == 144) {
 				gpu->mode = VBLANK;
@@ -78,8 +78,8 @@ void step_gpu(struct machine_t *gem) {
 		break;
 
 	case VBLANK:
-		if (cpu->t >= VBLANK_CYCLE_COUNT) {
-			cpu->t = 0;
+		if (gpu->t >= VBLANK_CYCLE_COUNT) {
+			gpu->t = 0;
 			gpu->curline++;
 
 			if (gpu->curline > 153) {

@@ -132,6 +132,8 @@ struct gpu_t {
 
 	palette object_0;
 	palette object_1;
+
+    int t; // Timing
 };
 
 struct gpu_t *reset_gpu();

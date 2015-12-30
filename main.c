@@ -37,9 +37,11 @@ int main(int argc, char **argv) {
 
         gem->cpu->t -= 70224;
 
-        Uint32 t2 = SDL_GetTicks();
+        Uint32 delay = SDL_GetTicks() - t1;
 
-        SDL_Delay(17 - (t2 - t1));
+        if (delay <= 17) {
+            SDL_Delay(17 - delay);
+        }
 	}
 
     destroy(gem);

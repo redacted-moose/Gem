@@ -59,6 +59,8 @@ void destroy_cpu(struct cpu_t *cpu) {
 
 void step_cpu(struct machine_t *gem) {
     struct cpu_t *cpu = gem->cpu;
+    struct gpu_t *gpu = gem->gpu;
+
 	byte instruction = read_byte(gem, cpu->pc);
     INFO("Instruction is 0x%02X\n", instruction);
 	cpu->pc++;
@@ -69,10 +71,12 @@ void step_cpu(struct machine_t *gem) {
 	cpu->opcodes[instruction].execute(gem);
     if (cpu->use_timing2) {
         cpu->t += cpu->opcodes[instruction].timing2;
+        gpu->t += cpu->opcodes[instruction].timing2;
         cpu->last_t = cpu->opcodes[instruction].timing2;
         cpu->use_timing2 = false;
     } else {
         cpu->t += cpu->opcodes[instruction].timing1;
+        gpu->t += cpu->opcodes[instruction].timing1;
         cpu->last_t = cpu->opcodes[instruction].timing1;
     }
 
