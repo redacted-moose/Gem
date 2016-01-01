@@ -1,12 +1,18 @@
 #include <SDL/SDL.h>
 
-#include "../gem.h"
 #include "../graphics.h"
 
-#define WHITE 0x000000ff
-#define LIGHT_GRAY 0x000000aa
-#define DARK_GRAY 0x00000055
-#define BLACK 0x00000000
+#define COLOR_WHITE 0x000000ff
+#define COLOR_LIGHT_GRAY 0x000000aa
+#define COLOR_DARK_GRAY 0x00000055
+#define COLOR_BLACK 0x00000000
+
+const Uint32 color_map[4] = {
+    COLOR_WHITE,
+    COLOR_LIGHT_GRAY,
+    COLOR_DARK_GRAY,
+    COLOR_BLACK
+};
 
 SDL_Surface *screen;
 
@@ -44,14 +50,6 @@ void destroy_graphics() {
     SDL_Quit();
 }
 
-const Uint32 color_map[4] = {
-    WHITE,
-    LIGHT_GRAY,
-    DARK_GRAY,
-    BLACK
-};
-
-// this is sketchy...
 void set_pixel(int x, int y, byte byte_color) {
 //     unsigned char* p = (unsigned char*)(screen
 //                     + ((x >> 1) + (y << 7) + (y << 5)));
@@ -127,11 +125,12 @@ Uint32 get_pixel_raw(int x, int y) {
         return 0;       /* shouldn't happen, but avoids warnings */
     }
 }
+
 /**
  * return the pixel value at (x, y)
  * note: the surface must be locked before calling this!
  */
-// This is broken - needs to return a byte and properly unlock screen
+//FIXME: This is broken - needs to return a byte and properly unlock screen
 byte get_pixel(int x, int y) {
     if (SDL_MUSTLOCK(screen)) {
         if (SDL_LockSurface(screen) < 0) {
@@ -147,16 +146,16 @@ byte get_pixel(int x, int y) {
     }
 
     switch (color) {
-    case WHITE:
+    case COLOR_WHITE:
         return 0;
 
-    case LIGHT_GRAY:
+    case COLOR_LIGHT_GRAY:
         return 1;
 
-    case DARK_GRAY:
+    case COLOR_DARK_GRAY:
         return 2;
 
-    case BLACK:
+    case COLOR_BLACK:
         return 3;
 
     default:

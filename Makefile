@@ -1,8 +1,8 @@
 DEBUG = TRUE
-CC = gcc
-AS = as
-CXX= g++
-LD = ld
+# CC = gcc
+# AS = as
+# CXX= g++
+# LD = ld
 
 CWD = $(shell pwd)
 
@@ -14,84 +14,85 @@ CFLAGS += -W
 CFLAGS += --std=c99
 CFLAGS += `sdl-config --cflags`
 
+ifeq ($(DEBUG),FALSE)
+	CFLAGS += -Os
+else
+	CFLAGS += -Og -g -D DEBUG
+endif
+
 LDFLAGS = -Wall
 LDFLAGS += -W
 LDFLAGS += --std=c99
 LDFLAGS += `sdl-config --libs`
 
-ifeq ($(DEBUG),FALSE)
-	CFLAGS += -Os
-else
-	CFLAGS += -Og -g -D DEBUG
-    # LDFLAGS += --debug
-endif
+OBJDIR = build
 
 CSOURCES = $(wildcard *.c) $(wildcard cpu/*.c) graphics/sdl.c
 ASMSOURCES = $(wildcard *.S) $(wildcard cpu/*.S)
 CPPOBJS = $(patsubst %.cpp,%.o,$(wildcard *.cpp)) $(patsubst %.cpp,%.o,$(wildcard cpu/*.cpp))
 OBJS = $(patsubst %.c,%.o,$(CSOURCES)) $(patsubst %.S,%.o,$(ASMSOURCES)) $(CPPOBJS)
-TEST_OBJS := $(filter-out main.o,$(OBJS))
+OBJS := $(addprefix $(OBJDIR)/,$(OBJS))
+TEST_OBJS := $(filter-out $(OBJDIR)/main.o,$(OBJS))
 
 UNITY_ROOT = ../Unity
-TARGET_BASE1 = test_cpu
-TARGET_BASE2 = test_mmu
-TARGET_BASE3 = test_arith8
-TARGET1 = $(TARGET_BASE1)$(TARGET_EXTENSION)
-TARGET2 = $(TARGET_BASE2)$(TARGET_EXTENSION)
-TARGET3 = $(TARGET_BASE3)$(TARGET_EXTENSION)
-SRC_FILES1 = test/unity.c test/TestCPU.c test/test_runners/TestCPU_Runner.c
-SRC_FILES2 = test/unity.c test/TestMMU.c test/test_runners/TestMMU_Runner.c
-SRC_FILES3 = test/unity.c test/TestArith8.c test/test_runners/TestArith8_Runner.c
-OBJ_FILES1 = unity.o TestCPU.o TestCPU_Runner.o
-OBJ_FILES2 = unity.o TestMMU.o TestMMU_Runner.o
-OBJ_FILES3 = unity.o TestArith8.o TestArith8_Runner.o
+TARGETS = TestCPU TestMMU TestArith8 TestGPU
+GEN_RUNNER = ruby $(UNITY_ROOT)/auto/generate_test_runner.rb
+UNITY_OBJ_FILES = $(OBJDIR)/test/unity.o $(addprefix $(OBJDIR)/test/,$(TARGETS:%=%.o) $(TARGETS:%=%_Runner.o))
 INC_DIRS = -I$(CWD) -I$(CWD)/cpu -I$(UNITY_ROOT)/src
 SYMBOLS = -DTEST
 
 ifneq ($(strip $(CPPOBJS)),)
 	LDFLAGS += --cpp
 endif
+
 # EXE = gem.so
 # DISTDIR = lib
 EXE = gem.bin
 DISTDIR = bin
-vpath %.tns $(DISTDIR)
-
 
 all: $(EXE)
 
-%.o: %.c
+$(OBJDIR)/%.o: %.c
 	$(CC) -c $< -o $@ $(CFLAGS)
 
-%.o: %.cpp
+$(OBJDIR)/%.o: %.cpp
 	$(CXX) -c $< -o $@ $(CFLAGS)
 
-%.o: %.S
+$(OBJDIR)/%.o: %.S
 	$(AS) -c $< -o $@
+
+$(OBJDIR)/test/unity.o: $(UNITY_ROOT)/src/unity.c
+	$(CC) -c $< -o $@ $(CFLAGS) $(INC_DIRS) $(SYMBOLS)
+
+$(OBJDIR)/test/%.o: test/%.c $(OBJDIR)/test/unity.o $(TEST_OBJS)
+	$(GEN_RUNNER) $< $(patsubst test/%.c,test/%_Runner.c,$<)
+	$(CC) -c $< -o $@ $(CFLAGS) $(INC_DIRS) $(SYMBOLS)
+	$(CC) -c $(patsubst test/%.c,test/%_Runner.c,$<) -o $(patsubst $(OBJDIR)/test/%.o,$(OBJDIR)/test/%_Runner.o,$@) $(CFLAGS) $(INC_DIRS) $(SYMBOLS)
+	$(CC) $(TEST_OBJS) $(addprefix $(OBJDIR)/test/,unity.o) $@ $(patsubst $(OBJDIR)/test/%.o,$(OBJDIR)/test/%_Runner.o,$@) -o $(DISTDIR)/$(patsubst $(OBJDIR)/test/%.o,%,$@) $(LDFLAGS)
+
+$(OBJS): | $(OBJDIR)
+
+$(OBJDIR):
+	mkdir -p $@
+	mkdir -p $@/cpu
+	mkdir -p $@/graphics
+	mkdir -p $@/test
+	mkdir -p $@/test/test_runners
 
 $(EXE): $(OBJS)
 	mkdir -p $(DISTDIR)
-# 	$(LD) $^ -o $(DISTDIR)/$@ $(LDFLAGS)
-# ifeq ($(DEBUG),FALSE)
-# 	@rm -f $(DISTDIR)/*.gdb
-# endif
 	$(CC) $^ -o $(DISTDIR)/$@ $(LDFLAGS)
 
+.PHONY: $(TARGETS)
+$(TARGETS): $(TEST_OBJS) $(UNITY_OBJ_FILES)
+
 .PHONY: test
-test: $(TEST_OBJS)
-	ruby $(UNITY_ROOT)/auto/generate_test_runner.rb test/TestCPU.c test/test_runners/TestCPU_Runner.c
-	ruby $(UNITY_ROOT)/auto/generate_test_runner.rb test/TestMMU.c test/test_runners/TestMMU_Runner.c
-	ruby $(UNITY_ROOT)/auto/generate_test_runner.rb test/TestArith8.c test/test_runners/TestArith8_Runner.c
-	$(CC) $(CFLAGS) $(INC_DIRS) $(SYMBOLS) -c $(SRC_FILES1)
-	$(CC) $(CFLAGS) $(INC_DIRS) $(SYMBOLS) -c $(SRC_FILES2)
-	$(CC) $(CFLAGS) $(INC_DIRS) $(SYMBOLS) -c $(SRC_FILES3)
-	$(CC) $^ $(OBJ_FILES1) -o $(DISTDIR)/$(TARGET1) $(LDFLAGS)
-	$(CC) $^ $(OBJ_FILES2) -o $(DISTDIR)/$(TARGET2) $(LDFLAGS)
-	$(CC) $^ $(OBJ_FILES3) -o $(DISTDIR)/$(TARGET3) $(LDFLAGS)
-	$(DISTDIR)/$(TARGET1)
-	$(DISTDIR)/$(TARGET2)
-	$(DISTDIR)/$(TARGET3)
+test: $(TARGETS)
+	for target in $^; do \
+		$(DISTDIR)/$$target; \
+	done
 
 .PHONY: clean
 clean:
-	rm -f $(OBJS) $(OBJ_FILES1) $(OBJ_FILES2) *.elf $(DISTDIR)/*.gdb $(DISTDIR)/$(EXE) $(DISTDIR)/$(TARGET1) $(DISTDIR)/$(TARGET2)
+	rm -f *.elf $(DISTDIR)/*.gdb $(DISTDIR)/$(EXE) $(addprefix $(DISTDIR)/,$(TARGETS))
+	rm -rf $(OBJDIR)

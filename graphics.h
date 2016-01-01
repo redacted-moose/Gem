@@ -9,7 +9,7 @@
 void reset_graphics();
 void destroy_graphics();
 void blit_screen();
-void set_pixel(int, int, byte);
-byte get_pixel(int, int);
+void set_pixel(int x, int y, byte color);
+byte get_pixel(int x, int y);
 
 #endif /* GRAPHICS_H_ */

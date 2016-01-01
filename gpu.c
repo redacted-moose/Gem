@@ -43,7 +43,7 @@ void step_gpu(struct machine_t *gem) {
 	switch (gpu->mode) {
 	case OAM_READ:
 		if (gpu->t >= OAM_READ_CYCLE_COUNT) {
-			gpu->t = 0; // This is bad - shouldn't directly muck with cpu timing value
+			gpu->t = 0;
 			gpu->mode = VRAM_READ;
             INFO("[GPU] Entering VRAM Read mode\n");
 		}
@@ -163,9 +163,10 @@ void render_sprites(struct machine_t *gem, byte scanrow[GPU_SCREEN_WIDTH]) {
                 // if this sprite has priority or shows under the bg
                 // then render the pixel
                 if ((obj.x + x) >= 0 && (obj.x + x) < GPU_SCREEN_WIDTH &&
-                    get_color(tilerow, x, 0b11100100) &&
+                    get_color(tilerow, x, pal.palette) &&
+                    /* get_color(tilerow, x, 0b11100100) && */
                     /* (obj.priority || get_pixel(obj.x + x, gpu.curline) != 0xff)) { */
-                    (obj.priority || !scanrow[obj.x + x])) {
+                    !(obj.priority || !scanrow[obj.x + x])) {
                     // if the sprite is x-flipped,
                     // write pixels in reverse order
                     color = get_color(tilerow, obj.x_flip ? (7-x) : x, pal.palette);
@@ -200,7 +201,7 @@ void renderscan_gpu(struct machine_t *gem) {
 }
 
 /**
- * blits the internal screen to sdl
+ * blits the internal screen to SDL
  */
 void renderscreen_gpu() {
     /* SDL_Flip(gem->gpu->screen); */
