@@ -9,15 +9,17 @@
 #define CPU_H_
 
 // #include <os.h>
+#include <stdint.h>
 #include <stdbool.h>
 
 #include "common.h"
 
-typedef void (*opcode)(struct machine_t *); // Function pointer declaring opcode functions
+// Function pointer declaring opcode functions
+typedef void (*opcode)(struct machine_t *);
 
 struct instruction_t {
-    int timing1;
-    int timing2;
+    uint8_t timing1;
+    uint8_t timing2;
     opcode execute;
 };
 
@@ -78,10 +80,10 @@ struct cpu_t {
     byte ihl;
 
 	// Tick counter
-	unsigned int t;
+    uint32_t t;
 
 	// Last instruction's # of t-states
-	unsigned int last_t;
+    uint8_t last_t;
 
 	// Halt mode
 	bool halt;
@@ -97,6 +99,30 @@ struct cpu_t {
     const struct instruction_t *opcodes;
 
 };
+
+#define GET_REG_16(reg) cpu->(reg)
+#define GET_REG_8L(reg) (byte)(cpu->(reg) & 0xFF)
+#define GET_REG_8H(reg) (byte)((cpu->(reg)>> 8) & 0xFF)
+
+#define SET_REG_16(reg, val) cpu->(reg) = (val)
+#define SET_REG_8L(reg, val) cpu->(reg) = (cpu->reg & 0xFF00) | (val)
+#define SET_REG_8H(reg, val) cpu->(reg) = (cpu->reg & 0x00FF) | (((word)(val)) << 8)
+
+#define REG_A() GET_REG_8H(af)
+#define REG_B() GET_REG_8H(bc)
+#define REG_C() GET_REG_8L(bc)
+#define REG_D() GET_REG_8H(de)
+#define REG_E() GET_REG_8L(de)
+#define REG_H() GET_REG_8H(hl)
+#define REG_L() GET_REG_8L(hl)
+
+#define REG_AF() GET_REG_16(af)
+#define REG_BC() GET_REG_16(bc)
+#define REG_DE() GET_REG_16(de)
+#define REG_HL() GET_REG_16(hl)
+
+#define GET_REG(reg) REG_ ## reg()
+#define SET_REG(reg, val) REG_ ## reg(val)
 
 #define INSTRUCTION_2(FUNC, CYCLES)             \
     {                                           \

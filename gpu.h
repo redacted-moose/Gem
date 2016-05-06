@@ -86,8 +86,8 @@ struct gpu_t {
 		struct {
 			tile tileset[384];
 			byte map0[1024];
-			byte map1[1024];
-		};
+            byte map1[1024];
+        };
 	};
 
 	union {

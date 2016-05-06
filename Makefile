@@ -1,33 +1,54 @@
-DEBUG = TRUE
-# CC = gcc
-# AS = as
-# CXX= g++
-# LD = ld
+DEBUG ?= TRUE
+CC ?= gcc
+AS ?= as
+CXX ?= g++
+LD ?= ld
 
 CWD = $(shell pwd)
+
+BACKEND ?= sdl
 
 # CFLAGS = -Wall -W -fPIC --std=c99 `sdl-config --cflags`
 # LDFLAGS = -Wall -W -shared --std=c99 `sdl-config --libs`
 
-CFLAGS = -Wall
-CFLAGS += -W
-CFLAGS += --std=c99
-CFLAGS += `sdl-config --cflags`
+CFLAGS = -Wall \
+         -pedantic \
+         -Wstrict-aliasing \
+         -Wstrict-overflow \
+         -W \
+         --std=c99 \
+         -march=native
+
 
 ifeq ($(DEBUG),FALSE)
 	CFLAGS += -Os
 else
-	CFLAGS += -Og -g -D DEBUG
+	CFLAGS += -Og \
+            -g \
+            -D WARN
+            # -D DEBUG
+	          # -Werror \
+	          # -Wshadow
 endif
 
-LDFLAGS = -Wall
-LDFLAGS += -W
-LDFLAGS += --std=c99
-LDFLAGS += `sdl-config --libs`
+LDFLAGS = -Wall \
+          -W \
+          --std=c99 \
+          -flto
+
+ifeq ($(BACKEND), sdl)
+	CFLAGS += -D SDL \
+            `sdl-config --cflags`
+	LDFLAGS += `sdl-config --libs`
+else ifeq ($(BACKEND), sdl2)
+	CFLAGS += -D SDL2 \
+            `sdl2-config --cflags`
+	LDFLAGS += `sdl2-config --libs`
+endif
 
 OBJDIR = build
 
-CSOURCES = $(wildcard *.c) $(wildcard cpu/*.c) graphics/sdl.c
+CSOURCES = $(wildcard *.c) $(wildcard cpu/*.c) graphics/$(BACKEND).c
 ASMSOURCES = $(wildcard *.S) $(wildcard cpu/*.S)
 CPPOBJS = $(patsubst %.cpp,%.o,$(wildcard *.cpp)) $(patsubst %.cpp,%.o,$(wildcard cpu/*.cpp))
 OBJS = $(patsubst %.c,%.o,$(CSOURCES)) $(patsubst %.S,%.o,$(ASMSOURCES)) $(CPPOBJS)

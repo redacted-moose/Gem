@@ -7,14 +7,10 @@
 #define COLOR_DARK_GRAY 0x00000055
 #define COLOR_BLACK 0x00000000
 
-const Uint32 color_map[4] = {
-    COLOR_WHITE,
-    COLOR_LIGHT_GRAY,
-    COLOR_DARK_GRAY,
-    COLOR_BLACK
-};
+const Uint32 color_map[4] = {COLOR_WHITE, COLOR_LIGHT_GRAY, COLOR_DARK_GRAY,
+                             COLOR_BLACK};
 
-SDL_Surface *screen;
+SDL_Surface* screen;
 
 void reset_graphics() {
     SDL_Color colors[256];
@@ -25,7 +21,7 @@ void reset_graphics() {
     }
 
     // Make a grayscale color palette
-    for(int i = 0; i < 256; i++){
+    for (int i = 0; i < 256; i++) {
         colors[i].r = i;
         colors[i].g = i;
         colors[i].b = i;
@@ -33,7 +29,8 @@ void reset_graphics() {
 
     atexit(SDL_Quit);
 
-    screen = SDL_SetVideoMode(GPU_SCREEN_WIDTH, GPU_SCREEN_HEIGHT, 8, SDL_SWSURFACE);
+    screen =
+        SDL_SetVideoMode(GPU_SCREEN_WIDTH, GPU_SCREEN_HEIGHT, 8, SDL_SWSURFACE);
     if (screen == NULL) {
         fprintf(stderr, "Couldn't set %dx%dx8 video mode: %s\n",
                 GPU_SCREEN_WIDTH, GPU_SCREEN_HEIGHT, SDL_GetError());
@@ -46,14 +43,12 @@ void reset_graphics() {
     SDL_WM_SetCaption("Gem - a gameboy emulator", NULL);
 }
 
-void destroy_graphics() {
-    SDL_Quit();
-}
+void destroy_graphics() { SDL_Quit(); }
 
 void set_pixel(int x, int y, byte byte_color) {
-//     unsigned char* p = (unsigned char*)(screen
-//                     + ((x >> 1) + (y << 7) + (y << 5)));
-//     *p = (x & 1) ? ((*p & 0xf0) | color) : ((*p & 0x0f) | (color << 4));
+    //     unsigned char* p = (unsigned char*)(screen
+    //                     + ((x >> 1) + (y << 7) + (y << 5)));
+    //     *p = (x & 1) ? ((*p & 0xf0) | color) : ((*p & 0x0f) | (color << 4));
 
     Uint32 color = color_map[byte_color];
 
@@ -66,7 +61,7 @@ void set_pixel(int x, int y, byte byte_color) {
 
     int bpp = screen->format->BytesPerPixel;
     /* here p is the address to the pixel we want to set */
-    Uint8 *p = (Uint8 *) screen->pixels + y * screen->pitch + x * bpp;
+    Uint8* p = (Uint8*)screen->pixels + y * screen->pitch + x * bpp;
 
     switch (bpp) {
     case 1:
@@ -74,7 +69,7 @@ void set_pixel(int x, int y, byte byte_color) {
         break;
 
     case 2:
-        *(Uint16 *) p = color;
+        *(Uint16*)p = color;
         break;
 
     case 3:
@@ -90,39 +85,38 @@ void set_pixel(int x, int y, byte byte_color) {
         break;
 
     case 4:
-        *(Uint32 *) p = color;
+        *(Uint32*)p = color;
         break;
     }
 
     if (SDL_MUSTLOCK(screen)) {
         SDL_UnlockSurface(screen);
     }
-
 }
 
 Uint32 get_pixel_raw(int x, int y) {
     int bpp = screen->format->BytesPerPixel;
     /* here p is the address to the pixel we want to retrieve */
-    Uint8 *p = (Uint8 *)screen->pixels + y * screen->pitch + x * bpp;
+    Uint8* p = (Uint8*)screen->pixels + y * screen->pitch + x * bpp;
 
-    switch(bpp) {
+    switch (bpp) {
     case 1:
         return *p;
 
     case 2:
-        return *(Uint16 *)p;
+        return *(Uint16*)p;
 
     case 3:
-        if(SDL_BYTEORDER == SDL_BIG_ENDIAN)
+        if (SDL_BYTEORDER == SDL_BIG_ENDIAN)
             return p[0] << 16 | p[1] << 8 | p[2];
         else
             return p[0] | p[1] << 8 | p[2] << 16;
 
     case 4:
-        return *(Uint32 *)p;
+        return *(Uint32*)p;
 
     default:
-        return 0;       /* shouldn't happen, but avoids warnings */
+        return 0; /* shouldn't happen, but avoids warnings */
     }
 }
 
@@ -130,7 +124,7 @@ Uint32 get_pixel_raw(int x, int y) {
  * return the pixel value at (x, y)
  * note: the surface must be locked before calling this!
  */
-//FIXME: This is broken - needs to return a byte and properly unlock screen
+// FIXME: This is broken - needs to return a byte and properly unlock screen
 byte get_pixel(int x, int y) {
     if (SDL_MUSTLOCK(screen)) {
         if (SDL_LockSurface(screen) < 0) {
@@ -163,6 +157,4 @@ byte get_pixel(int x, int y) {
     }
 }
 
-void blit_screen() {
-    SDL_Flip(screen);
-}
+void blit_screen() { SDL_Flip(screen); }
