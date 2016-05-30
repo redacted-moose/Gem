@@ -5,7 +5,7 @@
 #include "../mmu.h"
 #include "../gpu.h"
 #include "../input.h"
-#include "unity.h"
+#include "Unity/src/unity.h"
 
 struct machine_t gem;
 

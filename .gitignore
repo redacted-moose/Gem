@@ -30,3 +30,6 @@
 
 # Bin directory
 bin/
+
+# Test runners
+test/Test*_Runner.c

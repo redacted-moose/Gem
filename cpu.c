@@ -59,6 +59,7 @@ void step_cpu(struct machine_t* gem) {
     struct cpu_t* cpu = gem->cpu;
     struct gpu_t* gpu = gem->gpu;
 
+	// Fetch
     byte instruction = read_byte(gem, cpu->pc);
     INFO("Instruction is 0x%02X\n", instruction);
     cpu->pc++;
@@ -66,6 +67,7 @@ void step_cpu(struct machine_t* gem) {
     byte ihl = cpu->ihl = read_byte(gem, cpu->hl);
     word hl = cpu->hl;
 
+	// Execute
     cpu->opcodes[instruction].execute(gem);
     if (cpu->use_timing2) {
         cpu->t += cpu->opcodes[instruction].timing2;

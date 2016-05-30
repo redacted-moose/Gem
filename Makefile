@@ -55,7 +55,7 @@ OBJS = $(patsubst %.c,%.o,$(CSOURCES)) $(patsubst %.S,%.o,$(ASMSOURCES)) $(CPPOB
 OBJS := $(addprefix $(OBJDIR)/,$(OBJS))
 TEST_OBJS := $(filter-out $(OBJDIR)/main.o,$(OBJS))
 
-UNITY_ROOT = ../Unity
+UNITY_ROOT = test/Unity
 TARGETS = TestCPU TestMMU TestArith8 TestGPU
 GEN_RUNNER = ruby $(UNITY_ROOT)/auto/generate_test_runner.rb
 UNITY_OBJ_FILES = $(OBJDIR)/test/unity.o $(addprefix $(OBJDIR)/test/,$(TARGETS:%=%.o) $(TARGETS:%=%_Runner.o))
@@ -73,7 +73,11 @@ DISTDIR = bin
 
 all: $(EXE)
 
-$(OBJDIR)/%.o: %.c
+gem.yucc: gem.yuck
+	yuck gen $< > $@
+# yuck scmver $< > $@
+
+$(OBJDIR)/%.o: %.c gem.yucc
 	$(CC) -c $< -o $@ $(CFLAGS)
 
 $(OBJDIR)/%.o: %.cpp
@@ -115,5 +119,5 @@ test: $(TARGETS)
 
 .PHONY: clean
 clean:
-	rm -f *.elf $(DISTDIR)/*.gdb $(DISTDIR)/$(EXE) $(addprefix $(DISTDIR)/,$(TARGETS))
+	rm -f *.elf $(DISTDIR)/*.gdb $(DISTDIR)/$(EXE) $(addprefix $(DISTDIR)/,$(TARGETS)) *.yucc
 	rm -rf $(OBJDIR)

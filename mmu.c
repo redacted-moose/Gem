@@ -192,7 +192,7 @@ void load_rom(struct mmu_t *mmu, const char *path) {
         PRINT("Hudson HuC-1\n");
 		break;
     default:
-        PRINT("Unknown 0x%02X", mmu->rom_type);
+        PRINT("Unknown 0x%02X\n", mmu->rom_type);
 	}
     #endif
 }

@@ -1,0 +1,5 @@
+Usage: gem FILE
+Gem, a gameboy emulator
+
+  -d, --debug      Enable system debugger
+  --bios=<bios>    Specify a bios file
